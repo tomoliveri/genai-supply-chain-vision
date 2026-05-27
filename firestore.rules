@@ -1,0 +1,11 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    match /watchlist_items/{doc} {
+      allow read: if true;
+    }
+    match /daily_briefings/{doc} {
+      allow read: if true;
+    }
+  }
+}

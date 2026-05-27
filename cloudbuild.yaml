@@ -1,0 +1,19 @@
+# Invoked by 'gcloud builds submit' from the Terraform null_resource.
+# The _IMAGE substitution is set by Terraform to the Artifact Registry tag.
+steps:
+  - name: 'gcr.io/cloud-builders/docker'
+    args:
+      - build
+      - '--tag=$_IMAGE'
+      - '--file=backend/Dockerfile'
+      - '--cache-from=$_IMAGE'
+      - '.'
+
+images:
+  - '$_IMAGE'
+
+substitutions:
+  _IMAGE: 'OVERRIDE_IN_TERRAFORM'
+
+options:
+  logging: CLOUD_LOGGING_ONLY

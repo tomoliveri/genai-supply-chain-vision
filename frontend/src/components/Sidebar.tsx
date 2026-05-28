@@ -41,7 +41,7 @@ export function Sidebar({
             value={searchQuery}
             onChange={(e) => onSearchChange(e.target.value)}
             placeholder="Search ports…"
-            className="w-full bg-slate-800 text-sm text-slate-200 placeholder-slate-500 rounded-lg pl-8 pr-7 py-1.5 border border-slate-700 focus:border-blue-500 focus:outline-none transition-colors"
+            className="w-full bg-slate-800 text-base text-slate-200 placeholder-slate-500 rounded-lg pl-8 pr-7 py-1.5 border border-slate-700 focus:border-blue-500 focus:outline-none transition-colors"
           />
           {searchQuery && (
             <button

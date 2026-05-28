@@ -1,4 +1,9 @@
+import type { Metadata } from 'next';
 import Link from 'next/link';
+
+export const metadata: Metadata = {
+  alternates: { canonical: '/' },
+};
 
 const stats = [
   { label: 'Ports monitored', value: '68' },
@@ -47,6 +52,22 @@ const steps = [
 export default function LandingPage() {
   return (
     <div className="min-h-[100dvh] bg-[#f5f2ea] text-[#171713] antialiased">
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{
+          __html: JSON.stringify({
+            '@context': 'https://schema.org',
+            '@type': 'WebApplication',
+            name: 'SupplyWatch',
+            url: 'https://supplywatch.tomoliveri.com',
+            description:
+              'Daily port disruption intelligence from Sentinel-2 satellite imagery and Gemini Flash. Monitors 68 major global ports.',
+            applicationCategory: 'BusinessApplication',
+            operatingSystem: 'Web',
+            author: { '@type': 'Person', name: 'Tom Oliveri' },
+          }),
+        }}
+      />
       <header className="border-b border-[#d8d0c0]">
         <div className="mx-auto flex max-w-6xl items-center justify-between px-4 py-4 sm:px-6">
           <Link href="/" className="text-sm font-semibold tracking-tight">

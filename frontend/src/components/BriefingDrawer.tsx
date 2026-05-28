@@ -272,7 +272,7 @@ export function BriefingDrawer({ location, onClose }: BriefingDrawerProps) {
               >
                 <span className="flex items-center gap-1.5">
                   <Info className="w-3.5 h-3.5" />
-                  Type Guide
+                  Category Key
                 </span>
                 {typeGuideOpen ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />}
               </button>
@@ -378,7 +378,7 @@ export function BriefingDrawer({ location, onClose }: BriefingDrawerProps) {
             {(briefing.weather_summary || briefing.labor_status || briefing.peak_season_flag) && (
               <div>
                 <p className="text-xs font-medium text-slate-400 uppercase tracking-wider mb-2">
-                  Context
+                  Conditions
                 </p>
                 <div className="flex flex-wrap gap-1.5">
                   {briefing.weather_summary && (

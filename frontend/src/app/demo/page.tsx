@@ -1,4 +1,12 @@
+import type { Metadata } from 'next';
 import { DashboardContent } from '@/components/DashboardContent';
+
+export const metadata: Metadata = {
+  title: 'Live Dashboard',
+  description:
+    'Live port disruption dashboard monitoring 68 major global ports. Satellite imagery analysis updated daily.',
+  alternates: { canonical: '/demo' },
+};
 
 interface DemoPageProps {
   searchParams: Promise<{ port?: string }>;

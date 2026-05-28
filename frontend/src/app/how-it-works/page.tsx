@@ -1,4 +1,12 @@
+import type { Metadata } from 'next';
 import Link from 'next/link';
+
+export const metadata: Metadata = {
+  title: 'Engineering Story',
+  description:
+    'How SupplyWatch was built: Sentinel-2 satellite imagery, Gemini Flash, geospatial accuracy, two-stage reasoning architecture, cost breakdown, and what comes next.',
+  alternates: { canonical: '/how-it-works' },
+};
 
 export default function HowItWorksPage() {
   return (

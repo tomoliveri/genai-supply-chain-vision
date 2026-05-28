@@ -272,4 +272,4 @@ One document per port per analysis date.
 
 ## License
 
-MIT
+Apache 2.0

@@ -1,0 +1,338 @@
+[
+  {
+    "id": "iran-conflict-2026",
+    "region": "Middle East / Strait of Hormuz",
+    "category": "armed_conflict",
+    "title": "Iran Conflict — Strait of Hormuz Instability",
+    "description": "Active military conflict in the region. The Strait of Hormuz is a chokepoint for ~21 million barrels/day of crude oil and a critical shipping lane. Naval skirmishes and nearby strikes have created a high-risk zone. Jebel Ali (Dubai) suspended operations after nearby strikes. War-risk insurance premiums have tripled to quadrupled for vessels transiting the area. Major carriers including Maersk and Hapag-Lloyd have rerouted around the Cape of Good Hope, adding 1-3 weeks transit time. Asia-to-US spot freight rates have spiked 30-50%.",
+    "severity": 5,
+    "affected_ports": ["Jebel Ali", "Dubai", "Salalah", "Dammam", "Abu Dhabi", "Sharjah", "Fujairah", "Bandar Abbas", "Khor Fakkan", "Khalifa"],
+    "start_date": "2026-01-15",
+    "end_date": "2026-12-31",
+    "status": "active",
+    "impacts": [
+      "Port operations suspended or severely reduced",
+      "Container backlog accumulating at transshipment hubs",
+      "War-risk insurance 3-4× normal",
+      "Major carriers rerouting around Cape of Good Hope",
+      "1-3 weeks added transit time",
+      "30-50% freight rate increases on Asia-US lanes",
+      "Schedule reliability collapsed to 36% on Asia-Middle East trade"
+    ],
+    "schedule_reliability_pct": 36,
+    "avg_transit_delay_days": 10.4
+  },
+  {
+    "id": "salalah-drone-2026",
+    "region": "Middle East",
+    "category": "security_incident",
+    "title": "Drone Incident at Port of Salalah — Terminal Crane Damaged",
+    "description": "On 28 March 2026, a security incident involving reported drone activity at the Port of Salalah, Oman, damaged a terminal crane and caused a temporary suspension of all operations. Operations gradually resumed on 31 March but throughput remains reduced. This is part of the broader regional instability linked to the Iran conflict.",
+    "severity": 4,
+    "affected_ports": ["Salalah"],
+    "start_date": "2026-03-28",
+    "end_date": "2026-05-15",
+    "status": "recovering",
+    "impacts": [
+      "Terminal crane damaged — reduced lift capacity",
+      "Operations suspended 28-31 March",
+      "Residual backlog from suspension period",
+      "Regional transshipment disrupted"
+    ]
+  },
+  {
+    "id": "jeddah-delays-2026",
+    "region": "Middle East",
+    "category": "congestion",
+    "title": "Jeddah Arrival Delays — Hormuz Ripple Effects",
+    "description": "Average arrival delays at Jeddah Islamic Port rose to approximately 2.49 days on a rolling 30-day basis in March-April 2026. Driven by rerouted vessels from the Hormuz conflict zone creating congestion at alternative regional hubs, plus increased security checks at Saudi ports.",
+    "severity": 3,
+    "affected_ports": ["Jeddah"],
+    "start_date": "2026-03-01",
+    "end_date": "2026-06-30",
+    "status": "active",
+    "impacts": [
+      "Average 2.49 days arrival delay",
+      "Increased security screening slowing throughput",
+      "Diversion traffic from Hormuz-affected routes"
+    ]
+  },
+  {
+    "id": "panama-concessions-void-2026",
+    "region": "Central America",
+    "category": "legal_regulatory",
+    "title": "Panama Supreme Court Voids Hutchison Concessions — Balboa & Cristobal Closed",
+    "description": "Panama's Supreme Court voided Hutchison Port Holdings' concessions for the ports of Balboa and Cristobal. APM Terminals and Terminal Investment Limited (TIL) have taken interim control. During the transition period, there is NO entrance or exit of equipment and vessels at either port. Both are major transshipment hubs — Balboa on the Pacific side and Cristobal on the Atlantic/Caribbean side — so the regional impact on Latin American and Caribbean trade is severe. Vessels are diverting to alternative ports in Colombia (Cartagena, Buenaventura) and Mexico (Manzanillo, Lazaro Cardenas).",
+    "severity": 5,
+    "affected_ports": ["Balboa", "Cristobal", "Panama"],
+    "start_date": "2026-04-15",
+    "end_date": "2026-07-31",
+    "status": "active",
+    "impacts": [
+      "Complete cessation of vessel and equipment movement",
+      "Both Pacific and Atlantic Panama Canal entrances affected",
+      "Regional transshipment severely disrupted",
+      "Diversions to Colombian and Mexican ports adding 5-10 days",
+      "Panama Canal transits unaffected but feeder networks broken"
+    ]
+  },
+  {
+    "id": "casablanca-congestion-2026",
+    "region": "North Africa",
+    "category": "congestion",
+    "title": "Casablanca Port Congestion — 8.44 Days Average Waiting",
+    "description": "Persistent congestion at Casablanca port with approximately 8.44 days average vessel waiting time. Driven by high import volumes, limited terminal capacity, and equipment availability issues at Morocco's primary container gateway.",
+    "severity": 4,
+    "affected_ports": ["Casablanca"],
+    "start_date": "2026-02-01",
+    "end_date": "2026-06-30",
+    "status": "active",
+    "impacts": [
+      "8.44 days average vessel waiting time",
+      "Limited terminal capacity",
+      "Equipment availability issues",
+      "Morocco's primary container gateway bottlenecked"
+    ]
+  },
+  {
+    "id": "mombasa-congestion-2026",
+    "region": "East Africa",
+    "category": "congestion",
+    "title": "Mombasa Port Congestion — Equipment Shortages",
+    "description": "Mombasa port experiencing approximately 5.71 days average vessel waiting time due to equipment shortages and high transshipment volumes. Kenya's primary gateway for East African trade (Uganda, Rwanda, South Sudan, DRC) is bottlenecked.",
+    "severity": 3,
+    "affected_ports": ["Mombasa"],
+    "start_date": "2026-02-15",
+    "end_date": "2026-06-30",
+    "status": "active",
+    "impacts": [
+      "5.71 days average vessel waiting time",
+      "Equipment shortages (RTGs, reach stackers)",
+      "High transshipment volumes overwhelming capacity",
+      "East Africa gateway bottleneck"
+    ]
+  },
+  {
+    "id": "tema-congestion-2026",
+    "region": "West Africa",
+    "category": "congestion",
+    "title": "Tema Port Congestion — Crane Outages",
+    "description": "Tema port, Ghana, experiencing approximately 4.33 days average vessel waiting time with crane outages reducing lift capacity at West Africa's key hub.",
+    "severity": 3,
+    "affected_ports": ["Tema"],
+    "start_date": "2026-03-01",
+    "end_date": "2026-06-30",
+    "status": "active",
+    "impacts": [
+      "4.33 days average vessel waiting time",
+      "Crane outages reducing lift capacity",
+      "West Africa hub constrained"
+    ]
+  },
+  {
+    "id": "beira-weather-2026",
+    "region": "Southern Africa",
+    "category": "weather",
+    "title": "Beira Port — Severe Weather Disruption",
+    "description": "Beira port, Mozambique, running at approximately 12.5 days vessel waiting time due to severe weather events including tropical storm conditions. The port is exposed to the Mozambique Channel and has limited sheltered berthing.",
+    "severity": 5,
+    "affected_ports": ["Beira"],
+    "start_date": "2026-03-15",
+    "end_date": "2026-05-31",
+    "status": "active",
+    "impacts": [
+      "12.5 days average vessel waiting time",
+      "Severe weather — tropical storm conditions",
+      "Limited sheltered berthing at exposed port",
+      "Mozambique Channel weather patterns"
+    ]
+  },
+  {
+    "id": "cape-town-wind-2026",
+    "region": "Southern Africa",
+    "category": "weather",
+    "title": "Cape Town Wind-Bound Suspensions",
+    "description": "Cape Town port experiencing wind-bound suspensions of terminal activity. The Cape of Storms lives up to its name with seasonal gale-force winds regularly halting container operations at the South African hub. This is especially impactful given increased Cape of Good Hope traffic from Hormuz rerouting.",
+    "severity": 3,
+    "affected_ports": ["Cape Town"],
+    "start_date": "2026-04-01",
+    "end_date": "2026-09-30",
+    "status": "active",
+    "impacts": [
+      "Recurring wind-bound terminal suspensions",
+      "Increased traffic from Hormuz rerouting compounds delays",
+      "Seasonal gale-force winds in South Atlantic"
+    ]
+  },
+  {
+    "id": "europe-easter-backlog-2026",
+    "region": "Europe",
+    "category": "congestion",
+    "title": "European Port Backlogs — Easter Holidays + Rail Congestion",
+    "description": "Easter holiday backlogs across European ports combined with the ongoing Hamburg/northern rail corridor infrastructure congestion affecting connections to Bremerhaven, Wilhelmshaven, and Rotterdam. Labour strikes in Portugal and Greece earlier in the cycle affected berthing productivity. A worker strike in Italy has been reported affecting parcel transit times.",
+    "severity": 3,
+    "affected_ports": ["Hamburg", "Bremerhaven", "Wilhelmshaven", "Rotterdam", "Lisbon", "Piraeus", "Genoa", "La Spezia", "Gioia Tauro"],
+    "start_date": "2026-03-25",
+    "end_date": "2026-05-31",
+    "status": "active",
+    "impacts": [
+      "Easter holiday backlog",
+      "Hamburg northern rail corridor congestion",
+      "Bremerhaven and Wilhelmshaven rail connections strained",
+      "Rotterdam inland connections bottlenecked",
+      "Portugal and Greece labour strikes affecting berthing",
+      "Italy worker strike affecting parcel transit",
+      "Barge and rail delays of 2-4 days"
+    ]
+  },
+  {
+    "id": "ningbo-fog-2026",
+    "region": "East Asia",
+    "category": "weather",
+    "title": "Ningbo Fog Season — Intermittent Closures",
+    "description": "Ningbo-Zhoushan port hit by fog season causing intermittent port closures and increased vessel waiting times. As the world's busiest port by cargo tonnage, even short closures cascade through global schedules.",
+    "severity": 3,
+    "affected_ports": ["Ningbo", "Ningbo-Zhoushan"],
+    "start_date": "2026-03-15",
+    "end_date": "2026-06-15",
+    "status": "active",
+    "impacts": [
+      "Intermittent fog-related port closures",
+      "Increased vessel waiting times",
+      "World's busiest port — cascading global schedule impact",
+      "Visibility below safe navigation thresholds"
+    ]
+  },
+  {
+    "id": "jakarta-congestion-2026",
+    "region": "Southeast Asia",
+    "category": "congestion",
+    "title": "Jakarta Port Congestion — 4.7 Days Waiting",
+    "description": "Tanjung Priok (Jakarta) running heavily congested at approximately 4.7 days vessel waiting time. Indonesia's primary gateway is strained by high domestic demand and limited terminal expansion progress.",
+    "severity": 3,
+    "affected_ports": ["Jakarta", "Tanjung Priok"],
+    "start_date": "2026-02-01",
+    "end_date": "2026-06-30",
+    "status": "active",
+    "impacts": [
+      "4.7 days average vessel waiting time",
+      "High domestic demand straining capacity",
+      "Limited terminal expansion",
+      "Indonesia's primary gateway bottlenecked"
+    ]
+  },
+  {
+    "id": "surabaya-congestion-2026",
+    "region": "Southeast Asia",
+    "category": "congestion",
+    "title": "Surabaya Port Congestion — 4.9 Days Waiting",
+    "description": "Surabaya port running heavily congested at approximately 4.9 days vessel waiting time. Indonesia's second-largest port strained by redirected volumes from Jakarta congestion and growing East Java industrial demand.",
+    "severity": 3,
+    "affected_ports": ["Surabaya"],
+    "start_date": "2026-02-15",
+    "end_date": "2026-06-30",
+    "status": "active",
+    "impacts": [
+      "4.9 days average vessel waiting time",
+      "Redirected volumes from Jakarta congestion",
+      "East Java industrial growth",
+      "Indonesia's second-largest port strained"
+    ]
+  },
+  {
+    "id": "chile-swell-2026",
+    "region": "South America",
+    "category": "weather",
+    "title": "Chilean Ports — High-Swell Disruptions",
+    "description": "High-swell conditions disrupting Chilean ports including San Antonio and Valparaíso. Pacific swell events making berthing hazardous and slowing cargo operations at Chile's primary container gateways.",
+    "severity": 3,
+    "affected_ports": ["San Antonio", "Valparaiso", "Valparaíso"],
+    "start_date": "2026-04-01",
+    "end_date": "2026-08-31",
+    "status": "active",
+    "impacts": [
+      "High Pacific swell disrupting berthing",
+      "Hazardous conditions for cargo operations",
+      "Chile's primary container gateways affected",
+      "Seasonal southern hemisphere winter swells"
+    ]
+  },
+  {
+    "id": "new-zealand-weather-2026",
+    "region": "Oceania",
+    "category": "weather",
+    "title": "New Zealand Ports — Severe Weather Challenges",
+    "description": "Tauranga reporting approximately 2 days vessel waiting with severe weather causing berthing challenges. Lyttelton (Christchurch) running at approximately 3.5 days waiting. Seasonal autumn/winter storm patterns affecting both North and South Island ports.",
+    "severity": 2,
+    "affected_ports": ["Tauranga", "Lyttelton"],
+    "start_date": "2026-04-15",
+    "end_date": "2026-07-31",
+    "status": "active",
+    "impacts": [
+      "Tauranga: ~2 days waiting, severe weather",
+      "Lyttelton: ~3.5 days waiting",
+      "Seasonal autumn/winter storms",
+      "North and South Island ports affected"
+    ]
+  },
+  {
+    "id": "la-tariff-uncertainty-2026",
+    "region": "North America",
+    "category": "trade_policy",
+    "title": "Port of LA — Record Volumes Amid Tariff Uncertainty",
+    "description": "Port of Los Angeles processed 890,861 TEU in April 2026, 5.7% above last year — the second-best April on record. However, ongoing tariff uncertainty is creating forward-booking volatility. Port leadership has flagged the Middle East war as the primary concern for supply chain stability. Front-loading of cargo ahead of potential tariff increases is contributing to elevated volumes.",
+    "severity": 2,
+    "affected_ports": ["Los Angeles", "Long Beach"],
+    "start_date": "2026-01-01",
+    "end_date": "2026-12-31",
+    "status": "monitoring",
+    "impacts": [
+      "890,861 TEU in April — second-best April on record",
+      "5.7% above prior year",
+      "Tariff uncertainty causing booking volatility",
+      "Front-loading ahead of potential tariff increases",
+      "Middle East war flagged as primary supply chain risk"
+    ]
+  },
+  {
+    "id": "hormuz-rerouting-global-2026",
+    "region": "Global",
+    "category": "route_disruption",
+    "title": "Cape of Good Hope Rerouting — Global Schedule Impact",
+    "description": "Maersk and Hapag-Lloyd have rerouted Asia-Europe and Asia-US East Coast services around the Cape of Good Hope to avoid the Strait of Hormuz conflict zone. This adds approximately 4,000 nautical miles and 10-14 days to Asia-North Europe sailings, 7-10 days to Asia-Mediterranean, and 5-7 days to Asia-US East Coast via Suez. The additional capacity absorbed by longer voyages is effectively removing ~6-8% of global container fleet capacity from the market, supporting elevated freight rates.",
+    "severity": 3,
+    "affected_ports": ["Rotterdam", "Hamburg", "Felixstowe", "New York", "Savannah", "Norfolk", "Charleston"],
+    "start_date": "2026-02-01",
+    "end_date": "2026-12-31",
+    "status": "active",
+    "impacts": [
+      "4,000 nm added to Asia-Europe voyages",
+      "10-14 days added transit to North Europe",
+      "7-10 days added to Mediterranean",
+      "5-7 days added to US East Coast",
+      "~6-8% global fleet capacity absorbed by longer transits",
+      "Elevated freight rates across all major lanes",
+      "Australia-Europe transit times extended as vessels avoid Suez/Med routing"
+    ]
+  },
+  {
+    "id": "australia-mua-dispute-2026",
+    "region": "Oceania",
+    "category": "labor",
+    "title": "Australian Ports — MUA Protected Industrial Action",
+    "description": "The Maritime Union of Australia (MUA) has commenced protected industrial action at DP World terminals across Australia including Melbourne, Sydney, Brisbane, and Fremantle. Work bans, 24-hour stoppages, and overtime restrictions are causing berthing delays of 2-4 days and yard congestion at Australia's major container gateways. The action follows failed enterprise bargaining negotiations since mid-2025, with the MUA seeking a 16% wage increase over two years.",
+    "severity": 3,
+    "affected_ports": ["Melbourne", "Sydney", "Brisbane", "Fremantle", "Adelaide"],
+    "start_date": "2026-03-01",
+    "end_date": "2026-06-30",
+    "status": "active",
+    "impacts": [
+      "24-hour stoppages and work bans at DP World terminals",
+      "Berthing delays of 2-4 days at major Australian ports",
+      "Yard congestion building at Melbourne and Sydney",
+      "Overtime restrictions slowing night-shift turnaround",
+      "Enterprise bargaining negotiations remain unresolved",
+      "Impact compounded by Hormuz rerouting extending Europe-Australia transit"
+    ]
+  }
+]

@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import logging
+import time
 from typing import Literal
 
 import google.cloud.storage as gcs
@@ -47,26 +48,88 @@ _OBSERVE_USER_TEMPLATE: str = (
 
 _ASSESS_SYSTEM_PROMPT: str = (
     "You are a geospatial supply-chain analyst.  You will be given a set of "
-    "satellite-image observations plus external context (weather, labour, season) "
-    "and must decide whether a supply-chain disruption has occurred.\n\n"
-    "CRITICAL RULES:\n"
+    "satellite-image observations plus external context (geopolitical/conflict, "
+    "weather, labour, season) and must decide whether a supply-chain disruption "
+    "has occurred.\n\n"
+    "CRITICAL RULES — EXTERNAL CONTEXT AND IMAGERY:\n"
+    "- External context should inform assessment and may elevate severity, but "
+    "only for ports DIRECTLY in the conflict zone or subject to the court "
+    "ruling.  For example: a port *inside* the Strait of Hormuz conflict zone "
+    "(Jebel Ali, Bandar Abbas) IS disrupted regardless of imagery.  A port "
+    "merely on the same continent is not.\n"
+    "- If external context reports a court ruling voiding port concessions (e.g. "
+    "Panama Supreme Court voided Hutchison concessions), the DIRECTLY affected "
+    "ports (Balboa, Cristobal) ARE disrupted — no vessel/equipment movement "
+    "means the port is effectively closed.\n"
+    "- General lane-level disruptions (carrier rerouting, freight rate increases) "
+    "affect many ports — assign severity based on the SPECIFIC port-level "
+    "effects, not the lane-level event severity.  A port that gains transshipment "
+    "traffic from rerouting is NOT disrupted.\n"
+    "- If external context reports a drone/security incident damaging terminal "
+    "equipment at a specific port, that port IS disrupted.\n"
+    "- If external context reports war-risk insurance has tripled/quadrupled "
+    "SPECIFICALLY for vessels calling at a port, this is a strong disruption "
+    "signal for that port.\n"
+    "- If external context reports schedule reliability below 50% on a trade "
+    "lane, only ports with documented congestion/backlog from that lane qualify "
+    "as disrupted.\n\n"
+    "IMAGERY INTERPRETATION RULES:\n"
     "- A change in vessel count or type is NOT automatically a disruption.  More "
     "vessels at berth often means MORE throughput, not less.\n"
     "- A large vessel replaced by two smaller vessels may be normal fleet rotation, "
     "not disruption — assess based on total cargo capacity, not vessel count.\n"
     "- Empty yards that were full, or full yards that were empty, are strong signals.\n"
-    "- Severe weather (gale, storm, flood) IS a disruption — category 'weather'.\n"
-    "- Active labour strikes ARE a disruption — category 'labor'.\n"
-    "- Severity 5 is reserved for disasters: flood, fire, major spill, berth collapse.\n"
-    "- If the only change is different vessels at the same berths, that is normal "
-    "operations (severity 1, no disruption).\n"
-    "- Do not invent a disruption to satisfy the prompt.  \"No significant change\" "
-    "is a valid and common answer.\n\n"
+    "- Fewer vessels than baseline at anchorage may indicate vessels have been "
+    "rerouted away (confirm with external context).\n"
+    "- If the port appears to have NO vessels where it normally has many, and "
+    "external context explains why, this confirms disruption.\n\n"
+    "SEVERITY GUIDELINES:\n"
+    "- Severity 5: armed conflict forcing port closure; court-ordered cessation of "
+    "operations; major infrastructure damage (drone strike, crane collapse); "
+    "catastrophic weather flooding terminal; >10 days congestion.\n"
+    "- Severity 4: active war-risk zone with carrier rerouting; security incident "
+    "damaging equipment; 5-10 day congestion; full port-wide labour strike with "
+    "terminal shutdown or mass vessel diversions.\n"
+    "- Severity 3: significant congestion (3-5 days waiting); weather warnings; "
+    "fog season closures; equipment shortages; rolling labour stoppages "
+    "measurably reducing berth productivity.\n"
+    "- Severity 2: moderate congestion (1-3 days); seasonal weather issues; "
+    "tariff/trade policy uncertainty; minor work bans, overtime restrictions, "
+    "or warning strikes with minimal throughput impact.\n"
+    "- Severity 1: normal operations; routine vessel rotation; labour "
+    "negotiations without active industrial action; no significant change "
+    "from baseline.\n\n"
+    "IMPORTANT — LABOUR CONTEXT TIERS:\n"
+    "Labour events carry a severity tier (1-5) in the external context.  Use it "
+    "to calibrate: a severity-1 or severity-2 labour event (overtime bans, "
+    "warning strikes) should NOT drive the overall score above 2 unless imagery "
+    "independently shows significant congestion or yard overflow.  A severity-4 "
+    "labour event (port-wide shutdown) may justify severity 4 even with ambiguous "
+    "imagery.  The overall severity must be driven primarily by what the imagery "
+    "shows — external context informs, imagery confirms.\n\n"
+    "Do not invent a disruption to satisfy the prompt.  \"No significant change\" "
+    "is a valid answer when external context is clear and imagery is normal.\n\n"
     "Return a JSON object matching the schema.  Include quantitative metrics:\n"
     "- container_yard_fill_pct: best estimate of container yard occupancy (0-100).\n"
     "- vessel_count: vessels at berth or immediately adjacent.\n"
     "- vessel_count_anchorage: vessels waiting offshore at anchorage.\n"
-    "- disruption_category: one of the allowed literals."
+    "- disruption_category: one of the allowed literals — use 'incident' for "
+    "security/conflict events, 'weather' for storms/fog, 'congestion' for "
+    "queue buildup, 'labor' for strikes, 'none' for normal operations.\n\n"
+    "EXPLANATION FIELD — WRITING RULES:\n"
+    "- Write as a professional analyst briefing a logistics manager.  Lead with "
+    "the conclusion in plain language, then provide the evidence that supports it.\n"
+    "- NEVER reference your own decision rules, the prompt, or the assessment "
+    "framework.  Do NOT use phrases like \"per critical rules\", \"based on "
+    "guidelines\", \"the system determines\", \"external context takes precedence\", "
+    "or any other language that exposes how the analysis was produced.\n"
+    "- State findings directly.  Instead of \"Per critical rules, external context "
+    "indicating severe disruption takes precedence over imagery,\" write "
+    "\"Tropical storm conditions in the Mozambique Channel have caused severe "
+    "congestion despite the terminal appearing operational from orbit.\"\n"
+    "- Every sentence should be a fact or a supported judgement, never a "
+    "description of the analytical process.\n"
+    "- 2-4 sentences.  Specific and quantitative where possible."
 )
 
 _ASSESS_USER_TEMPLATE: str = (
@@ -75,7 +138,12 @@ _ASSESS_USER_TEMPLATE: str = (
     "External context:\n{external_context}\n\n"
     "Based strictly on these observations and external context, assess whether a "
     "supply-chain disruption has occurred.  Return a structured disruption assessment "
-    "with quantitative metrics."
+    "with quantitative metrics.  Remember: external context about armed conflict, "
+    "court rulings, port closures, or security incidents should inform assessment "
+    "and may elevate severity, but only for ports DIRECTLY in the conflict zone or "
+    "subject to the court ruling.  General lane-level disruptions (carrier rerouting, "
+    "freight rate increases) should be assessed based on the SPECIFIC port-level "
+    "effects, not the lane-level event severity."
 )
 
 
@@ -85,7 +153,14 @@ class DisruptionAnalysis(BaseModel):
     disruption_detected: bool
     severity_score: int = Field(ge=1, le=5, description="1 = no change, 5 = severe disruption")
     confidence_grade: Literal["High", "Medium", "Low"]
-    explanation: str = Field(description="Concise analyst-style summary, 2-4 sentences.")
+    explanation: str = Field(
+        description=(
+            "Concise analyst-style summary, 2-4 sentences.  Lead with the conclusion "
+            "in plain language, then provide supporting evidence.  Do NOT reference "
+            "the analytical process, decision rules, or assessment framework — write "
+            "as if briefing a logistics manager who needs to know what happened and why."
+        ),
+    )
 
     # Quantitative metrics extracted during analysis — these are the ML features.
     container_yard_fill_pct: int = Field(
@@ -121,6 +196,47 @@ def _fetch_gcs_bytes(gcs_uri: str) -> bytes:
     return data
 
 
+def _call_gemini_with_retry(
+    client: Client,
+    generate_config: genai_types.GenerateContentConfig | None,
+    contents: list[genai_types.Part],
+    stage_label: str,
+    max_retries: int = 5,
+) -> genai_types.GenerateContentResponse:
+    """
+    Call Gemini with exponential backoff for 429 rate-limit errors.
+
+    Vertex AI free tier has low quota (~5 RPM for gemini-2.5-flash).
+    This retry loop backs off exponentially (1s, 2s, 4s, 8s, 16s) before
+    giving up, which keeps the pipeline moving through backfill batches.
+    """
+    for attempt in range(max_retries):
+        try:
+            return client.models.generate_content(
+                model=_MODEL,
+                contents=contents,  # type: ignore[arg-type]
+                config=generate_config,
+            )
+        except Exception as exc:
+            err_str = str(exc)
+            if "429" not in err_str and "RESOURCE_EXHAUSTED" not in err_str:
+                raise
+            if attempt == max_retries - 1:
+                logger.error(
+                    "%s — 429 rate limit after %d retries, giving up: %s",
+                    stage_label, max_retries, exc,
+                )
+                raise
+            wait_s = 2 ** attempt
+            logger.warning(
+                "%s — 429 rate limit, retrying in %ds (attempt %d/%d)",
+                stage_label, wait_s, attempt + 1, max_retries,
+            )
+            time.sleep(wait_s)
+    # Unreachable — the loop always returns or raises
+    raise RuntimeError("Unexpected retry exit")
+
+
 def _call_gemini(
     baseline_bytes: bytes,
     current_bytes: bytes,
@@ -128,14 +244,16 @@ def _call_gemini(
     external_context_str: str = "",
 ) -> DisruptionAnalysis:
     """
-    Two-stage chain-of-thought analysis.
+    Two-stage chain-of-thought analysis with rate-limit retry.
 
     Stage 1 — Observation: free-text description of each image.  No structured
     output so the model can reason openly about what it sees.  This grounds the
     analysis in observable facts and prevents "different = disruption" errors.
 
     Stage 2 — Assessment: structured disruption analysis based ONLY on the
-    observations from Stage 1.  Uses the DisruptionAnalysis JSON schema.
+    observations from Stage 1 plus external context.  Uses the DisruptionAnalysis
+    JSON schema.  The external context includes geopolitical/conflict signals
+    that may override ambiguous imagery findings.
     """
     client = Client(vertexai=True, project=_PROJECT_ID, location=_LOCATION)
 
@@ -151,12 +269,13 @@ def _call_gemini(
         _MODEL, location_context[:60],
     )
 
-    observe_response = client.models.generate_content(
-        model=_MODEL,
-        contents=[baseline_part, current_part, observe_text_part],  # type: ignore[list-item]
-        config=genai_types.GenerateContentConfig(
+    observe_response = _call_gemini_with_retry(
+        client=client,
+        generate_config=genai_types.GenerateContentConfig(
             system_instruction=_OBSERVE_SYSTEM_PROMPT,
         ),
+        contents=[baseline_part, current_part, observe_text_part],
+        stage_label="Stage 1 (observe)",
     )
     observations: str = observe_response.text or ""
     logger.debug("Observations (%d chars): %s", len(observations), observations[:200])
@@ -171,23 +290,25 @@ def _call_gemini(
 
     logger.info("Stage 2 (assess) — %s for %r", _MODEL, location_context[:60])
 
-    assess_response = client.models.generate_content(
-        model=_MODEL,
-        contents=[assess_text_part],
-        config=genai_types.GenerateContentConfig(
+    assess_response = _call_gemini_with_retry(
+        client=client,
+        generate_config=genai_types.GenerateContentConfig(
             system_instruction=_ASSESS_SYSTEM_PROMPT,
             response_mime_type="application/json",
             response_schema=DisruptionAnalysis,
         ),
+        contents=[assess_text_part],
+        stage_label="Stage 2 (assess)",
     )
 
     raw_text: str = assess_response.text or ""
     analysis = DisruptionAnalysis.model_validate_json(raw_text)
     logger.info(
-        "Gemini result: disruption=%s severity=%d confidence=%s",
+        "Gemini result: disruption=%s severity=%d confidence=%s category=%s",
         analysis.disruption_detected,
         analysis.severity_score,
         analysis.confidence_grade,
+        analysis.disruption_category,
     )
     return analysis
 
@@ -208,7 +329,7 @@ def analyse_disruption(
         current_image_path:  gs:// URI of the most recent imagery JPEG.
         baseline_image_path: gs:// URI of the historical baseline JPEG.
         location_context:    Free-text description of the site (name, function, etc.).
-        external_context_str: Pre-formatted weather/labour/season context string.
+        external_context_str: Pre-formatted weather/labour/geopolitical context string.
 
     Returns:
         :class:`DisruptionAnalysis` with the Gemini-structured assessment.

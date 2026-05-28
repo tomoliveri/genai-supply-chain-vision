@@ -5,6 +5,7 @@ import logging
 import os
 import random
 import sys
+import time
 from datetime import datetime, timedelta, timezone
 from typing import Any, Final
 
@@ -20,7 +21,7 @@ from backend.src.external_data import (
     gather_external_context,
 )
 from backend.src.geometry_utils import compute_aoi_bbox
-from backend.src.image_processor import process_and_upload
+from backend.src.image_processor import process_and_upload, process_to_bytes
 from backend.src.stac_client import (
     SentinelImageResult,
     get_latest_sentinel_image,
@@ -35,6 +36,11 @@ logger = logging.getLogger(__name__)
 
 _PROJECT_ID: Final[str] = "traveltime-465606"
 _WATCHLIST_COLLECTION: Final[str] = "watchlist_items"
+
+# Module-level weather cache — avoids redundant Open-Meteo archive API calls
+# across ports during backfill.  Keyed by (rounded_lat, rounded_lon, date_str).
+# Rounded to 0.5° (~55 km) — close enough for weather context.
+_WEATHER_CACHE: dict[tuple[float, float, str], dict[str, Any]] = {}
 
 _CDSE_TOKEN_URL: Final[str] = (
     "https://identity.dataspace.copernicus.eu/auth/realms/CDSE/protocol/openid-connect/token"
@@ -170,12 +176,13 @@ def _write_briefing(
         "vessel_count": analysis.vessel_count,
         "vessel_count_anchorage": analysis.vessel_count_anchorage,
         "disruption_category": analysis.disruption_category,
-        "analysis_version": 3,  # bumped: includes geopolitical context
+        "analysis_version": 4,  # bumped: explanation-field prose rules
     }
     if external_data:
         doc["weather_summary"] = str(external_data.get("weather_summary", ""))
         doc["weather_severity"] = int(external_data.get("weather_severity", 1))
         doc["labor_status"] = str(external_data.get("labor_status", "Normal"))
+        doc["labor_severity"] = int(external_data.get("labor_severity", 1))
         doc["peak_season_flag"] = bool(external_data.get("peak_season_flag", False))
         # Geopolitical context — new in analysis_version 3
         doc["geopolitical_active_events"] = list(external_data.get("geopolitical_active_events", []))
@@ -206,8 +213,16 @@ def _process_scene_pair(
     location_context: str,
     db: Any,
     external_data: dict[str, Any] | None = None,
+    *,
+    current_bytes: bytes | None = None,
+    baseline_bytes: bytes | None = None,
 ) -> bool:
-    """Run Gemini analysis on one current/baseline image pair and persist results."""
+    """Run Gemini analysis on one current/baseline image pair and persist results.
+
+    When *current_bytes* and/or *baseline_bytes* are provided they are used
+    directly, avoiding a redundant GCS download.  This is the fast path used
+    by backfill when the bytes were captured during upload.
+    """
     if _briefing_exists(db, current_uri):
         logger.info("[%s] Briefing already exists for %s — skipping", doc_id, current_uri)
         return True
@@ -232,6 +247,7 @@ def _process_scene_pair(
                 ),
                 labor=LaborContext(
                     status=str(external_data.get("labor_status", "Normal")),
+                    severity=int(external_data.get("labor_severity", 1)),
                     detail="",
                 ),
                 peak_season=bool(external_data.get("peak_season_flag", False)),
@@ -245,17 +261,18 @@ def _process_scene_pair(
             )
             ext_str = build_external_context_string(recon)
 
-        # Fetch bytes directly and use the non-Firestore-writing path to avoid
-        # the double-write bug: analyse_disruption() writes internally, and
-        # _write_briefing() would be the second write.  analyse_disruption_from_bytes()
-        # calls Gemini but does NOT persist.
-        storage: Any = gcs.Client()
-        current_bytes = storage.bucket(bucket_name).blob(
-            current_uri.removeprefix(f"gs://{bucket_name}/")
-        ).download_as_bytes()
-        baseline_bytes = storage.bucket(bucket_name).blob(
-            baseline_uri.removeprefix(f"gs://{bucket_name}/")
-        ).download_as_bytes()
+        # Use pre-fetched bytes if provided (backfill fast path); otherwise
+        # download from GCS (daily pipeline path).
+        if current_bytes is None:
+            storage: Any = gcs.Client()
+            current_bytes = storage.bucket(bucket_name).blob(
+                current_uri.removeprefix(f"gs://{bucket_name}/")
+            ).download_as_bytes()
+        if baseline_bytes is None:
+            storage_gcs: Any = gcs.Client()
+            baseline_bytes = storage_gcs.bucket(bucket_name).blob(
+                baseline_uri.removeprefix(f"gs://{bucket_name}/")
+            ).download_as_bytes()
         analysis = analyse_disruption_from_bytes(
             current_bytes=current_bytes,
             baseline_bytes=baseline_bytes,
@@ -310,7 +327,7 @@ def _backfill_location(
         start_date.strftime("%Y-%m-%d"), end_date.strftime("%Y-%m-%d"),
     )
 
-    scenes = get_scenes_for_period(bbox, start_date, end_date, max_cloud_cover=15.0)
+    scenes = get_scenes_for_period(bbox, start_date, end_date, max_cloud_cover=30.0)
     if not scenes:
         logger.warning("[%s] No scenes found for backfill period", doc_id)
         return 0
@@ -320,7 +337,9 @@ def _backfill_location(
     storage_client: Any = gcs.Client()
 
     # Upload all scenes first so consecutive pairs are available for analysis.
-    uploaded: list[tuple[SentinelImageResult, str]] = []
+    # Store JPEG bytes alongside URIs so we can feed them directly to Gemini
+    # without a redundant GCS download.
+    uploaded: list[tuple[SentinelImageResult, str, bytes | None]] = []
     for scene in scenes:
         tci = scene.get("tci")
         tci_url = tci["https"] if tci else None
@@ -333,18 +352,20 @@ def _backfill_location(
         blob = storage_client.bucket(bucket_name).blob(expected_blob)
         if blob.exists():
             logger.info("[%s] %s already uploaded — reusing", doc_id, scene_date)
-            uploaded.append((scene, f"gs://{bucket_name}/{expected_blob}"))
+            # Download existing bytes so we can skip the GCS fetch later.
+            cached_bytes = blob.download_as_bytes()
+            uploaded.append((scene, f"gs://{bucket_name}/{expected_blob}", cached_bytes))
             continue
 
         try:
-            uri = process_and_upload(
+            uri, jpeg_bytes = process_to_bytes(
                 image_result=scene,
                 bbox_wgs84=bbox,
                 location_id=doc_id,
                 bucket_name=bucket_name,
                 auth_token=auth_token,
             )
-            uploaded.append((scene, uri))
+            uploaded.append((scene, uri, jpeg_bytes))
             logger.info("[%s] Uploaded %s → %s", doc_id, scene_date, uri)
         except Exception as exc:  # noqa: BLE001
             logger.warning("[%s] Upload failed for %s: %s", doc_id, scene_date, exc)
@@ -356,18 +377,34 @@ def _backfill_location(
     db: Any = gfs.Client(project=_PROJECT_ID)
     briefings_written = 0
     for i in range(1, len(uploaded)):
-        baseline_scene, baseline_uri = uploaded[i - 1]
-        current_scene, current_uri = uploaded[i]
+        baseline_scene, baseline_uri, baseline_bytes = uploaded[i - 1]
+        current_scene, current_uri, cur_bytes = uploaded[i]
+
+        # Gentle throttle to keep retry backoff successful.
+        # The per-call exponential backoff inside _call_gemini handles
+        # actual 429s — this is just a steady cooldown between pairs.
+        if i > 1:
+            time.sleep(1)
 
         # Gather ALL external context — weather, labour, peak season, AND geopolitical.
-        ext_ctx = gather_external_context(
-            location_name, latitude, longitude,
-            current_scene["capture_date"],
-        )
+        # Use module-level weather cache (rounded to 0.5° grid) to avoid
+        # redundant Open-Meteo archive API calls across ports during backfill.
+        scene_date_str = current_scene["capture_date"][:10]
+        cache_key = (round(latitude * 2) / 2, round(longitude * 2) / 2, scene_date_str)
+        if cache_key in _WEATHER_CACHE:
+            ext_ctx = _WEATHER_CACHE[cache_key]
+        else:
+            ext_ctx = gather_external_context(
+                location_name, latitude, longitude,
+                current_scene["capture_date"],
+            )
+            _WEATHER_CACHE[cache_key] = ext_ctx
+
         ext_data: dict[str, Any] = {
             "weather_summary": ext_ctx["weather"]["summary"],
             "weather_severity": ext_ctx["weather"]["severity"],
             "labor_status": ext_ctx["labor"]["status"],
+            "labor_severity": ext_ctx["labor"]["severity"],
             "peak_season_flag": ext_ctx["peak_season"],
             # Geopolitical context — new in analysis_version 3
             "geopolitical_active_events": ext_ctx["geopolitical"]["active_events"],
@@ -375,7 +412,12 @@ def _backfill_location(
             "geopolitical_category": ext_ctx["geopolitical"]["category"],
         }
 
-        if _process_scene_pair(doc_id, bucket_name, current_scene, current_uri, baseline_uri, location_context, db, ext_data):
+        if _process_scene_pair(
+            doc_id, bucket_name, current_scene, current_uri, baseline_uri,
+            location_context, db, ext_data,
+            current_bytes=cur_bytes,
+            baseline_bytes=baseline_bytes,
+        ):
             briefings_written += 1
 
     logger.info("[%s] Backfill complete — %d briefing(s) written", doc_id, briefings_written)
@@ -442,6 +484,7 @@ def _process_item(
                 "weather_summary": ext_ctx["weather"]["summary"],
                 "weather_severity": ext_ctx["weather"]["severity"],
                 "labor_status": ext_ctx["labor"]["status"],
+                "labor_severity": ext_ctx["labor"]["severity"],
                 "peak_season_flag": ext_ctx["peak_season"],
                 "geopolitical_active_events": ext_ctx["geopolitical"]["active_events"],
                 "geopolitical_max_severity": ext_ctx["geopolitical"]["max_severity"],
@@ -513,8 +556,14 @@ def main() -> None:
         raw: dict[str, Any] = doc.to_dict() or {}
 
         if backfill_months > 0 and auth_token:
+            # Refresh CDSE token before each port — tokens expire after ~30 min
+            # and a full 26-port backfill takes ~40+ min.
+            fresh_token = _get_cdse_token()
+            if fresh_token is None:
+                logger.warning("[%s] Token refresh failed — skipping imagery", doc.id)
+                continue
             try:
-                written = _backfill_location(doc.id, raw, bucket_name, auth_token, backfill_months)
+                written = _backfill_location(doc.id, raw, bucket_name, fresh_token, backfill_months)
                 logger.info("[%s] Backfill wrote %d briefing(s)", doc.id, written)
                 successes += 1
             except Exception as exc:  # noqa: BLE001

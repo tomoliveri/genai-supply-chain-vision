@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState, useMemo } from 'react';
 import {
   collection,
   onSnapshot,
@@ -8,10 +8,11 @@ import {
   type DocumentData,
 } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
-import type { WatchlistItem, DailyBriefing, LocationWithBriefing } from '@/lib/types';
+import type { WatchlistItem, DailyBriefing, LocationWithBriefing, DisruptionStats } from '@/lib/types';
 
 interface UseFirestoreDataResult {
   locations: LocationWithBriefing[];
+  stats: DisruptionStats;
   loading: boolean;
   error: Error | null;
 }
@@ -53,7 +54,6 @@ function snapshotToBriefings(snap: QuerySnapshot<DocumentData>): DailyBriefing[]
       baseline_image_path: (data['baseline_image_path'] as string) ?? '',
       location_context: (data['location_context'] as string) ?? '',
       analysed_at: (data['analysed_at'] as string) ?? '',
-      // Phase 2-3 fields
       container_yard_fill_pct: (data['container_yard_fill_pct'] as number) ?? undefined,
       vessel_count: (data['vessel_count'] as number) ?? undefined,
       vessel_count_anchorage: (data['vessel_count_anchorage'] as number) ?? undefined,
@@ -63,6 +63,9 @@ function snapshotToBriefings(snap: QuerySnapshot<DocumentData>): DailyBriefing[]
       labor_status: (data['labor_status'] as string) ?? undefined,
       peak_season_flag: (data['peak_season_flag'] as boolean) ?? undefined,
       analysis_version: (data['analysis_version'] as number) ?? undefined,
+      geopolitical_active_events: (data['geopolitical_active_events'] as string[]) ?? undefined,
+      geopolitical_max_severity: (data['geopolitical_max_severity'] as number) ?? undefined,
+      geopolitical_category: (data['geopolitical_category'] as string) ?? undefined,
     };
   });
 }
@@ -102,24 +105,51 @@ function mergeLocations(
   return merged;
 }
 
+function computeStats(locations: LocationWithBriefing[]): DisruptionStats {
+  const totalPorts = locations.length;
+  const disruptedPorts = locations.filter(
+    (l) => l.latestBriefing?.disruption_detected
+  ).length;
+  const avgSeverity = totalPorts > 0
+    ? Math.round(
+        (locations.reduce((sum, l) => sum + l.severityScore, 0) / totalPorts) * 10
+      ) / 10
+    : 0;
+
+  const byCategory: Record<string, number> = {};
+  const regionsAffected: Set<string> = new Set();
+
+  for (const loc of locations) {
+    const cat = loc.latestBriefing?.disruption_category ?? 'none';
+    byCategory[cat] = (byCategory[cat] || 0) + 1;
+
+    if (loc.latestBriefing?.geopolitical_category && loc.latestBriefing.geopolitical_category !== 'none') {
+      regionsAffected.add(loc.latestBriefing.geopolitical_category);
+    }
+  }
+
+  return { totalPorts, disruptedPorts, avgSeverity, byCategory, regionsAffected: [...regionsAffected] };
+}
+
 /**
  * Subscribes to `watchlist_items` and `daily_briefings` collections in
  * real time, merging them so each location carries its latest briefing.
  *
+ * Also computes aggregate disruption statistics for the dashboard header.
+ *
  * Returns empty data (no crash) when Firebase is not configured.
  */
 export function useFirestoreData(): UseFirestoreDataResult {
-  // When db is null (unconfigured), skip loading state entirely.
   const [locations, setLocations] = useState<LocationWithBriefing[]>([]);
   const [loading, setLoading] = useState<boolean>(db !== null);
   const [error, setError] = useState<Error | null>(null);
 
-  // Mutable refs hold the latest snapshots across subscription callbacks
-  // without causing re-renders on every update.
   const watchlistRef = useRef<WatchlistItem[]>([]);
   const briefingsRef = useRef<DailyBriefing[]>([]);
   const watchlistReadyRef = useRef(false);
   const briefingsReadyRef = useRef(false);
+
+  const stats = useMemo(() => computeStats(locations), [locations]);
 
   useEffect(() => {
     if (!db) return;
@@ -163,5 +193,5 @@ export function useFirestoreData(): UseFirestoreDataResult {
     };
   }, []);
 
-  return { locations, loading, error };
+  return { locations, stats, loading, error };
 }

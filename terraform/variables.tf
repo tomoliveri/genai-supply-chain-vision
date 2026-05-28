@@ -11,9 +11,8 @@ variable "region" {
 }
 
 variable "billing_account_id" {
-  description = "GCP billing account ID (without 'billingAccounts/' prefix)"
+  description = "GCP billing account ID (without 'billingAccounts/' prefix) — set in terraform.tfvars"
   type        = string
-  default     = "014818-0716AE-8D49D1"
 }
 
 variable "budget_amount_aud" {
@@ -23,9 +22,8 @@ variable "budget_amount_aud" {
 }
 
 variable "alert_email" {
-  description = "Email address to receive budget alert notifications"
+  description = "Email address to receive budget alert notifications — set in terraform.tfvars"
   type        = string
-  default     = "tomoliveri@gmail.com"
 }
 
 variable "state_bucket" {

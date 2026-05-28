@@ -40,7 +40,8 @@ class WeatherContext(TypedDict):
     code: str             # "clear", "rain", "storm", "fog", "snow", …
 
 class LaborContext(TypedDict):
-    status: str           # "Normal", "Strike warning", "Strike active"
+    status: str           # "Normal", "Strike warning", "Strike active", "Resolved"
+    severity: int         # 1 = negotiations only … 5 = port-wide shutdown
     detail: str           # e.g. "ILA contract expires 2026-09-30"
 
 class ExternalContext(TypedDict):
@@ -218,10 +219,11 @@ def check_labor(location_name: str, as_of: date | None = None) -> LaborContext:
             continue
 
         detail: str = str(event.get("detail", ""))
+        severity: int = int(event.get("severity", 1))
 
         if start <= as_of <= end:
             status: str = str(event.get("status", "Strike active"))
-            return LaborContext(status=status, detail=detail)
+            return LaborContext(status=status, severity=severity, detail=detail)
 
         # Warning window: 14 days before start
         warning_start = start.replace(year=start.year)  # type: ignore[arg-type]
@@ -230,10 +232,11 @@ def check_labor(location_name: str, as_of: date | None = None) -> LaborContext:
         if warning_start <= as_of < start:
             return LaborContext(
                 status="Strike warning",
+                severity=severity,
                 detail=f"{detail} (starts {start.isoformat()})" if detail else f"Potential action from {start.isoformat()}",
             )
 
-    return LaborContext(status="Normal", detail="")
+    return LaborContext(status="Normal", severity=1, detail="")
 
 
 # ---------------------------------------------------------------------------
@@ -332,7 +335,7 @@ def build_external_context_string(external_data: ExternalContext) -> str:
     l = external_data["labor"]
     if l["status"] != "Normal":
         parts.append(
-            f"LABOUR: {l['status']} — {l['detail']}"
+            f"LABOUR: {l['status']} (severity {l['severity']}/5) — {l['detail']}"
         )
     else:
         parts.append("LABOUR: Normal operations — no active strikes or disputes.")

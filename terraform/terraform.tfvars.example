@@ -1,0 +1,9 @@
+# Copy this file to terraform.tfvars and fill in your values.
+# terraform.tfvars is gitignored and never committed.
+
+# GCP billing account ID — find it in the GCP Console under Billing.
+# Format: XXXXXX-XXXXXX-XXXXXX
+billing_account_id = "XXXXXX-XXXXXX-XXXXXX"
+
+# Email address to receive budget alert notifications.
+alert_email = "you@example.com"

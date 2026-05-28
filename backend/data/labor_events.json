@@ -1,0 +1,122 @@
+[
+  {
+    "port": "Los Angeles",
+    "start_date": "2026-06-30",
+    "end_date": "2026-07-07",
+    "status": "Strike active",
+    "severity": 3,
+    "detail": "ILWU Local 13 work stoppage — container terminals at reduced capacity"
+  },
+  {
+    "port": "Rotterdam",
+    "start_date": "2026-09-15",
+    "end_date": "2026-09-22",
+    "status": "Strike warning",
+    "severity": 2,
+    "detail": "FNV Havens wage negotiations — potential 48h walkout"
+  },
+  {
+    "port": "Baltimore",
+    "start_date": "2026-08-01",
+    "end_date": "2026-08-03",
+    "status": "Strike active",
+    "severity": 2,
+    "detail": "ILA local contract expiry — one-day rolling stoppages"
+  },
+  {
+    "port": "Singapore",
+    "start_date": "2026-12-01",
+    "end_date": "2026-12-05",
+    "status": "Strike warning",
+    "severity": 1,
+    "detail": "Port authority overtime ban — slower turnaround expected"
+  },
+  {
+    "port": "Lisbon",
+    "start_date": "2026-03-10",
+    "end_date": "2026-03-24",
+    "status": "Resolved",
+    "severity": 3,
+    "detail": "Portuguese dockworkers strike — reduced berthing productivity at Lisbon, Setúbal, and Sines"
+  },
+  {
+    "port": "Piraeus",
+    "start_date": "2026-03-05",
+    "end_date": "2026-03-15",
+    "status": "Resolved",
+    "severity": 3,
+    "detail": "Greek port workers 48h rolling strikes — Piraeus container terminals affected, berthing delays of 1-3 days"
+  },
+  {
+    "port": "Genoa",
+    "start_date": "2026-04-01",
+    "end_date": "2026-04-30",
+    "status": "Resolved",
+    "severity": 2,
+    "detail": "Italian port worker strike affecting parcel transit times at Genoa, La Spezia, and Gioia Tauro"
+  },
+  {
+    "port": "La Spezia",
+    "start_date": "2026-04-01",
+    "end_date": "2026-04-30",
+    "status": "Resolved",
+    "severity": 2,
+    "detail": "Italian port worker strike — see Genoa entry"
+  },
+  {
+    "port": "Gioia Tauro",
+    "start_date": "2026-04-01",
+    "end_date": "2026-04-30",
+    "status": "Resolved",
+    "severity": 2,
+    "detail": "Italian port worker strike — see Genoa entry"
+  },
+  {
+    "port": "Hamburg",
+    "start_date": "2026-03-01",
+    "end_date": "2026-05-31",
+    "status": "Strike warning",
+    "severity": 2,
+    "detail": "HHLA wage negotiations ongoing — warning strikes possible; northern rail corridor infrastructure works compounding delays"
+  },
+  {
+    "port": "Bremerhaven",
+    "start_date": "2026-03-01",
+    "end_date": "2026-05-31",
+    "status": "Strike warning",
+    "severity": 2,
+    "detail": "Northern German port labour negotiations — linked to Hamburg HHLA talks; rail infrastructure congestion affecting connections"
+  },
+  {
+    "port": "Melbourne",
+    "start_date": "2026-04-01",
+    "end_date": "2026-05-15",
+    "status": "Resolved",
+    "severity": 2,
+    "detail": "MUA protected industrial action at DP World terminal — 24-hour stoppages, work bans, overtime restrictions (resolved mid-May 2026)"
+  },
+  {
+    "port": "Sydney",
+    "start_date": "2026-04-01",
+    "end_date": "2026-05-15",
+    "status": "Resolved",
+    "severity": 2,
+    "detail": "MUA protected industrial action at Port Botany — work bans and rolling stoppages (resolved mid-May 2026)"
+  },
+  {
+    "port": "Brisbane",
+    "start_date": "2026-04-01",
+    "end_date": "2026-05-15",
+    "status": "Resolved",
+    "severity": 2,
+    "detail": "MUA protected industrial action at DP World terminal — overtime bans slowing turnaround (resolved mid-May 2026)"
+  },
+  {
+    "port": "Fremantle",
+    "start_date": "2026-04-01",
+    "end_date": "2026-05-15",
+    "status": "Resolved",
+    "severity": 2,
+    "detail": "MUA protected industrial action — 24-hour stoppages and work bans (resolved mid-May 2026)"
+  }
+]

@@ -29,6 +29,10 @@ export interface DailyBriefing {
   labor_status?: string;
   peak_season_flag?: boolean;
   analysis_version?: number;
+  // Phase 4 — geopolitical context
+  geopolitical_active_events?: string[];
+  geopolitical_max_severity?: number;
+  geopolitical_category?: string;
 }
 
 /** Watchlist item merged with its latest briefing, ready for display. */
@@ -38,4 +42,13 @@ export interface LocationWithBriefing extends WatchlistItem {
   severityScore: number;
   /** All historical briefings for this location, sorted newest-first. */
   history: DailyBriefing[];
+}
+
+/** Aggregate disruption statistics for the dashboard header. */
+export interface DisruptionStats {
+  totalPorts: number;
+  disruptedPorts: number;
+  avgSeverity: number;
+  byCategory: Record<string, number>;
+  regionsAffected: string[];
 }

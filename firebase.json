@@ -1,0 +1,16 @@
+{
+  "hosting": [{
+    "target": "supplywatch",
+    "public": "frontend/public",
+    "ignore": ["firebase.json", "**/.*", "**/node_modules/**"],
+    "rewrites": [
+      {
+        "source": "**",
+        "run": {
+          "serviceId": "supplywatch-dashboard",
+          "region": "australia-southeast1"
+        }
+      }
+    ]
+  }]
+}

@@ -294,6 +294,22 @@ def crop_and_downscale(
                 return _read_clipped_rgb(ds, bbox_wgs84, out_size)
 
 
+def _encode_jpeg_bytes(
+    image_array: np.ndarray,
+    jpeg_quality: int = _JPEG_QUALITY,
+) -> bytes:
+    """Encode a uint8 (H, W, 3) RGB array as JPEG bytes in memory."""
+    buf = io.BytesIO()
+    img = Image.fromarray(image_array, mode="RGB")
+    img.save(buf, format="JPEG", quality=jpeg_quality, optimize=True)
+    return buf.getvalue()
+
+
+def _gcs_path_for(location_id: str, capture_date: str) -> str:
+    """Return the GCS blob path for an imagery JPEG."""
+    return _GCS_PATH_TEMPLATE.format(location_id=location_id, date=capture_date[:10])
+
+
 def upload_to_gcs(
     image_array: np.ndarray,
     location_id: str,
@@ -314,20 +330,15 @@ def upload_to_gcs(
     Returns:
         ``gs://`` URI of the uploaded object.
     """
-    date_str = capture_date[:10]  # YYYY-MM-DD
-    gcs_path = _GCS_PATH_TEMPLATE.format(location_id=location_id, date=date_str)
-
-    buf = io.BytesIO()
-    img = Image.fromarray(image_array, mode="RGB")
-    img.save(buf, format="JPEG", quality=jpeg_quality, optimize=True)
-    buf.seek(0)
+    gcs_path = _gcs_path_for(location_id, capture_date)
+    jpeg_bytes = _encode_jpeg_bytes(image_array, jpeg_quality)
 
     client = gcs.Client()
     blob = client.bucket(bucket_name).blob(gcs_path)
-    blob.upload_from_file(buf, content_type="image/jpeg")
+    blob.upload_from_string(jpeg_bytes, content_type="image/jpeg")
 
     gcs_uri = f"gs://{bucket_name}/{gcs_path}"
-    logger.info("Uploaded imagery to %s (%d bytes)", gcs_uri, buf.tell())
+    logger.info("Uploaded imagery to %s (%d bytes)", gcs_uri, len(jpeg_bytes))
     return gcs_uri
 
 
@@ -361,3 +372,46 @@ def process_and_upload(
     tci_url = _resolve_tci_url(image_result)
     rgb = crop_and_downscale(tci_url, bbox_wgs84, auth_token, out_size)
     return upload_to_gcs(rgb, location_id, image_result["capture_date"], bucket_name, jpeg_quality)
+
+
+def process_to_bytes(
+    image_result: SentinelImageResult,
+    bbox_wgs84: Sequence[float],
+    location_id: str,
+    bucket_name: str,
+    auth_token: str | None = None,
+    out_size: int = _OUT_SIZE,
+    jpeg_quality: int = _JPEG_QUALITY,
+) -> tuple[str, bytes]:
+    """
+    End-to-end pipeline: discover → crop → downscale → upload + return bytes.
+
+    Like :func:`process_and_upload` but also returns the JPEG bytes so callers
+    (e.g. backfill) can feed them directly to Gemini without a redundant GCS
+    download.  Returns ``(gs_uri, jpeg_bytes)``.
+
+    Args:
+        image_result:  Output of :func:`~backend.src.stac_client.get_latest_sentinel_image`.
+        bbox_wgs84:    [min_lon, min_lat, max_lon, max_lat] in WGS84.
+        location_id:   GCS path namespace for this watchlist location.
+        bucket_name:   GCS destination bucket.
+        auth_token:    CDSE OIDC Bearer token for remote tile access.
+        out_size:      Long-edge pixel count for the stored JPEG.
+        jpeg_quality:  JPEG compression quality (1–95).
+
+    Returns:
+        ``(gs_uri, jpeg_bytes)`` tuple.
+    """
+    tci_url = _resolve_tci_url(image_result)
+    rgb = crop_and_downscale(tci_url, bbox_wgs84, auth_token, out_size)
+
+    jpeg_bytes = _encode_jpeg_bytes(rgb, jpeg_quality)
+    gcs_path = _gcs_path_for(location_id, image_result["capture_date"])
+
+    client = gcs.Client()
+    blob = client.bucket(bucket_name).blob(gcs_path)
+    blob.upload_from_string(jpeg_bytes, content_type="image/jpeg")
+
+    gcs_uri = f"gs://{bucket_name}/{gcs_path}"
+    logger.info("Uploaded imagery to %s (%d bytes)", gcs_uri, len(jpeg_bytes))
+    return gcs_uri, jpeg_bytes

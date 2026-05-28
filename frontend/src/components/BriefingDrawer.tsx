@@ -1,4 +1,6 @@
-import { X, AlertTriangle, CheckCircle, Satellite } from 'lucide-react';
+'use client';
+
+import { X, AlertTriangle, CheckCircle, Satellite, ChevronDown, ChevronUp } from 'lucide-react';
 import { useState } from 'react';
 import { SeverityBadge } from './SeverityBadge';
 import { ImageComparison } from './ImageComparison';
@@ -22,17 +24,93 @@ function formatTimestamp(iso: string): string {
   }
 }
 
+function formatDateShort(iso: string): string {
+  try {
+    return new Intl.DateTimeFormat('en-US', { month: 'short', day: 'numeric' }).format(new Date(iso));
+  } catch {
+    return iso.slice(0, 10);
+  }
+}
+
 function confidenceBgClass(grade: string): string {
   if (grade === 'High') return 'bg-blue-500';
   if (grade === 'Medium') return 'bg-amber-500';
   return 'bg-slate-500';
 }
 
+const CATEGORY_LABELS: Record<string, string> = {
+  none: 'Normal',
+  weather: 'Weather',
+  labor: 'Labor Strike',
+  congestion: 'Congestion',
+  vessel_shift: 'Vessel Shift',
+  yard_overflow: 'Yard Overflow',
+  incident: 'Security/Incident',
+  other: 'Other',
+};
+
+function categoryColorClass(cat: string): string {
+  const map: Record<string, string> = {
+    none: 'bg-slate-600',
+    weather: 'bg-cyan-600',
+    labor: 'bg-yellow-600',
+    congestion: 'bg-amber-600',
+    vessel_shift: 'bg-blue-600',
+    yard_overflow: 'bg-orange-600',
+    incident: 'bg-red-600',
+    other: 'bg-purple-600',
+  };
+  return map[cat] ?? 'bg-slate-600';
+}
+
+/** Mini severity timeline chart — shows severity scores over time as colored bars. */
+function SeverityTimeline({ history }: { history: DailyBriefing[] }) {
+  if (history.length < 2) return null;
+
+  const sorted = [...history].sort((a, b) => a.analysed_at.localeCompare(b.analysed_at));
+
+  return (
+    <div>
+      <p className="text-xs font-medium text-slate-400 uppercase tracking-wider mb-2">
+        Severity Timeline
+      </p>
+      <div className="flex items-end gap-1 h-16">
+        {sorted.map((h) => {
+          const heightPct = (h.severity_score / 5) * 100;
+          const color = SEVERITY_COLORS[h.severity_score] ?? '#64748b';
+          return (
+            <div
+              key={h.id}
+              className="flex-1 min-w-[8px] rounded-t cursor-default group relative"
+              style={{ height: `${Math.max(heightPct, 8)}%`, backgroundColor: color }}
+              title={`${formatDateShort(h.analysed_at)}: Sev ${h.severity_score} — ${h.disruption_detected ? 'Disrupted' : 'Clear'}`}
+            >
+              {/* Tooltip on hover */}
+              <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-1 hidden group-hover:block z-20 pointer-events-none">
+                <span className="inline-block bg-slate-800 text-xs text-slate-200 rounded px-2 py-1 whitespace-nowrap border border-slate-600 shadow-lg">
+                  {formatDateShort(h.analysed_at)} — Sev {h.severity_score}
+                </span>
+              </div>
+            </div>
+          );
+        })}
+      </div>
+      <div className="flex justify-between mt-1 text-[10px] text-slate-600">
+        <span>{formatDateShort(sorted[0].analysed_at)}</span>
+        <span>{formatDateShort(sorted[sorted.length - 1].analysed_at)}</span>
+      </div>
+    </div>
+  );
+}
+
 export function BriefingDrawer({ location, onClose }: BriefingDrawerProps) {
   const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [showAllHistory, setShowAllHistory] = useState(false);
   const briefing = location.history.find((h) => h.id === selectedId) ?? location.latestBriefing;
   const severityColor = SEVERITY_COLORS[location.severityScore] ?? '#64748b';
   const severityLabel = SEVERITY_LABELS[location.severityScore] ?? 'Unknown';
+  const visibleHistory = showAllHistory ? location.history : location.history.slice(0, 6);
+
   return (
     <aside
       className="w-[420px] shrink-0 flex flex-col bg-slate-900 border-l border-slate-700 overflow-hidden animate-slide-in"
@@ -83,8 +161,8 @@ export function BriefingDrawer({ location, onClose }: BriefingDrawerProps) {
               </p>
             </div>
 
-            {/* Confidence */}
-            <div className="flex items-center gap-2">
+            {/* Confidence + Category */}
+            <div className="flex items-center gap-2 flex-wrap">
               <span className="text-xs font-medium text-slate-400 uppercase tracking-wider">
                 Confidence
               </span>
@@ -93,6 +171,17 @@ export function BriefingDrawer({ location, onClose }: BriefingDrawerProps) {
               >
                 {briefing.confidence_grade}
               </span>
+
+              {briefing.disruption_category && briefing.disruption_category !== 'none' && (
+                <>
+                  <span className="text-xs text-slate-600">·</span>
+                  <span
+                    className={`text-xs font-semibold text-white px-2 py-0.5 rounded-full ${categoryColorClass(briefing.disruption_category)}`}
+                  >
+                    {CATEGORY_LABELS[briefing.disruption_category] ?? briefing.disruption_category}
+                  </span>
+                </>
+              )}
             </div>
 
             {/* Disruption status */}
@@ -145,6 +234,31 @@ export function BriefingDrawer({ location, onClose }: BriefingDrawerProps) {
                       <div className="text-[10px] text-slate-500">Anchorage</div>
                     </div>
                   )}
+                </div>
+              </div>
+            )}
+
+            {/* Geopolitical context */}
+            {briefing.geopolitical_active_events && briefing.geopolitical_active_events.length > 0 && (
+              <div>
+                <p className="text-xs font-medium text-amber-400 uppercase tracking-wider mb-2 flex items-center gap-1">
+                  <AlertTriangle className="w-3 h-3" />
+                  Geopolitical Risk
+                  {briefing.geopolitical_max_severity && briefing.geopolitical_max_severity >= 4 && (
+                    <span className="text-red-400">⚠ High</span>
+                  )}
+                </p>
+                <div className="bg-red-900/20 border border-red-800/30 rounded-lg p-3 space-y-1.5">
+                  {briefing.geopolitical_category && briefing.geopolitical_category !== 'none' && (
+                    <p className="text-xs text-red-300 font-medium">
+                      {briefing.geopolitical_category.replace(/\+/g, ' · ').replace(/_/g, ' ')}
+                    </p>
+                  )}
+                  {briefing.geopolitical_active_events.map((event, i) => (
+                    <p key={i} className="text-xs text-slate-300 leading-relaxed">
+                      • {event}
+                    </p>
+                  ))}
                 </div>
               </div>
             )}
@@ -206,36 +320,66 @@ export function BriefingDrawer({ location, onClose }: BriefingDrawerProps) {
             {/* Timestamp */}
             <p className="text-xs text-slate-500">
               Analysed {formatTimestamp(briefing.analysed_at)}
+              {briefing.analysis_version !== undefined && (
+                <span className="ml-2 text-slate-600">v{briefing.analysis_version}</span>
+              )}
             </p>
 
-            {/* Historical timeline */}
+            {/* Severity timeline chart */}
+            <SeverityTimeline history={location.history} />
+
+            {/* Historical briefing list */}
             {location.history.length > 1 && (
               <div>
-                <p className="text-xs font-medium text-slate-400 uppercase tracking-wider mb-2">
-                  History ({location.history.length})
-                </p>
-                <div className="max-h-32 overflow-y-auto sidebar-scroll space-y-1">
-                  {location.history.map((h) => (
+                <div className="flex items-center justify-between mb-2">
+                  <p className="text-xs font-medium text-slate-400 uppercase tracking-wider">
+                    History ({location.history.length})
+                  </p>
+                  {location.history.length > 6 && (
+                    <button
+                      type="button"
+                      onClick={() => setShowAllHistory(!showAllHistory)}
+                      className="text-xs text-blue-400 hover:text-blue-300 flex items-center gap-0.5"
+                    >
+                      {showAllHistory ? (
+                        <>Show less <ChevronUp className="w-3 h-3" /></>
+                      ) : (
+                        <>Show all ({location.history.length}) <ChevronDown className="w-3 h-3" /></>
+                      )}
+                    </button>
+                  )}
+                </div>
+                <div className="max-h-48 overflow-y-auto sidebar-scroll space-y-1">
+                  {visibleHistory.map((h) => (
                     <button
                       key={h.id}
                       type="button"
                       onClick={() => setSelectedId(h.id === selectedId ? null : h.id)}
-                      className={`w-full text-left rounded px-2 py-1.5 text-xs transition-colors ${
+                      className={`w-full text-left rounded px-2.5 py-2 text-xs transition-colors ${
                         h.id === briefing.id
-                          ? 'bg-slate-700 text-slate-200'
-                          : 'text-slate-400 hover:bg-slate-800 hover:text-slate-300'
+                          ? 'bg-slate-700 border-l-2 border-blue-400'
+                          : 'border-l-2 border-transparent text-slate-400 hover:bg-slate-800 hover:text-slate-300'
                       }`}
                     >
-                      <span className="font-mono">{h.analysed_at.slice(0, 10)}</span>
-                      <span className="ml-2">
-                        {h.disruption_detected ? (
-                          <span className="text-amber-400">⚠ Sev {h.severity_score}</span>
-                        ) : (
-                          <span className="text-green-400">✓ Clear</span>
-                        )}
-                      </span>
-                      {h.disruption_category && h.disruption_category !== 'none' && (
-                        <span className="ml-1 text-slate-500">· {h.disruption_category}</span>
+                      <div className="flex items-center justify-between">
+                        <span className="font-mono text-slate-300">{h.analysed_at.slice(0, 10)}</span>
+                        <span className="flex items-center gap-1.5">
+                          {h.disruption_detected ? (
+                            <span className="text-amber-400">⚠ Sev {h.severity_score}</span>
+                          ) : (
+                            <span className="text-green-400">✓ Clear</span>
+                          )}
+                          {h.disruption_category && h.disruption_category !== 'none' && (
+                            <span className={`text-[10px] text-white px-1.5 py-0.5 rounded-full ${categoryColorClass(h.disruption_category)}`}>
+                              {CATEGORY_LABELS[h.disruption_category] ?? h.disruption_category}
+                            </span>
+                          )}
+                        </span>
+                      </div>
+                      {h.id === briefing.id && h.explanation && (
+                        <p className="mt-1.5 text-slate-400 leading-relaxed line-clamp-2">
+                          {h.explanation}
+                        </p>
                       )}
                     </button>
                   ))}

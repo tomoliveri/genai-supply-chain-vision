@@ -2,8 +2,8 @@
 
 import 'leaflet/dist/leaflet.css';
 import L from 'leaflet';
-import { MapContainer, TileLayer, Rectangle, Tooltip, useMap, Marker } from 'react-leaflet';
 import { useEffect } from 'react';
+import { MapContainer, TileLayer, Rectangle, Tooltip, useMap, Marker } from 'react-leaflet';
 import { computeAoiBounds } from '@/lib/geo';
 import { SEVERITY_COLORS } from '@/lib/severity';
 import type { LocationWithBriefing } from '@/lib/types';
@@ -16,7 +16,7 @@ L.Icon.Default.mergeOptions({
   shadowUrl: '/leaflet/marker-shadow.png',
 });
 
-interface MapLayerProps {
+interface LeafletMapLayerProps {
   locations: LocationWithBriefing[];
   selectedId: string | null;
   onSelect: (id: string) => void;
@@ -32,7 +32,7 @@ function BoundsFitter({ locations }: { locations: LocationWithBriefing[] }) {
       locations.map((loc) => L.latLng(loc.latitude, loc.longitude)),
     );
     map.fitBounds(bounds, { padding: [60, 60] });
-  // Only run on initial mount — locations array identity is stable after first load.
+  // Only run on initial mount
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -52,11 +52,14 @@ function makeCircleIcon(color: string, isSelected: boolean): L.DivIcon {
   });
 }
 
-export function MapLayer({ locations, selectedId, onSelect }: MapLayerProps) {
+export function LeafletMapLayer({ locations, selectedId, onSelect }: LeafletMapLayerProps) {
   return (
     <MapContainer
       center={[20, 0]}
-      zoom={2}
+      zoom={3}
+      minZoom={2}
+      maxBounds={[[-85, -180], [85, 180]]}
+      maxBoundsViscosity={1.0}
       style={{ height: '100%', width: '100%' }}
       zoomControl={true}
     >
@@ -64,6 +67,7 @@ export function MapLayer({ locations, selectedId, onSelect }: MapLayerProps) {
         url="https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png"
         attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>'
         maxZoom={19}
+        noWrap={true}
       />
 
       <BoundsFitter locations={locations} />

@@ -9,12 +9,18 @@ tfplan
 # Secrets / credentials
 .env
 .env.*
-!frontend/.env.production
+!**/.env.*.example
 *.json
 !package.json
 !tsconfig*.json
+!backend/data/*.json
+!firebase.json
 service-account-*.json
 credentials*.json
+
+# Terraform — tfvars hold real values, only examples are committed
+terraform/terraform.tfvars
+!terraform/terraform.tfvars.example
 
 # Python
 __pycache__/
@@ -28,9 +34,12 @@ venv/
 .venv/
 
 # Node / Next.js
-frontend/node_modules/
+node_modules/
 frontend/.next/
 frontend/out/
+
+# Firebase deployment cache
+.firebase/
 
 # OS
 .DS_Store

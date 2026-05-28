@@ -15,12 +15,12 @@ WORKDIR /app
 
 # Install Python dependencies before copying source so this layer is cached
 # separately and only re-built when requirements.txt changes.
-COPY backend/requirements.txt requirements.txt
+COPY requirements.txt requirements.txt
 RUN pip install --no-cache-dir -r requirements.txt
 
 # Copy full backend package. PYTHONPATH=/app means 'backend' is a top-level
 # package and all existing imports (from backend.src.*) resolve correctly.
-COPY backend/ backend/
+COPY . backend/
 
 ENV PYTHONPATH=/app
 ENV PYTHONUNBUFFERED=1

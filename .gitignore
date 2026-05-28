@@ -41,5 +41,8 @@ frontend/out/
 # Firebase deployment cache
 .firebase/
 
+# Claude Code
+CLAUDE.md
+
 # OS
 .DS_Store

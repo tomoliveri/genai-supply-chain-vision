@@ -42,7 +42,7 @@ export function DashboardContent({ portSlug }: DashboardContentProps) {
   const selectedLocation = locations.find((loc) => loc.id === selectedId) ?? null;
 
   return (
-    <div className="flex flex-col h-screen bg-slate-950">
+    <div className="flex flex-col h-[100dvh] bg-slate-950">
       {/* Content row — desktop: sidebar + map + drawer side by side */}
       <div className="flex-1 flex overflow-hidden">
 

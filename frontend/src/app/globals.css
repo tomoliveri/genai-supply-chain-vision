@@ -25,6 +25,10 @@ body {
   @apply bg-slate-950 text-slate-50 antialiased;
 }
 
+.sidebar-scroll {
+  overscroll-behavior: contain;
+}
+
 .sidebar-scroll::-webkit-scrollbar {
   width: 4px;
 }

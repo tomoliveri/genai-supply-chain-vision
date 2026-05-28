@@ -4,7 +4,7 @@ export default function HowItWorksPage() {
   return (
     <div className="min-h-screen bg-slate-950 text-slate-200">
       {/* Header */}
-      <header className="px-6 py-6 max-w-3xl mx-auto border-b border-slate-800">
+      <header className="px-4 sm:px-6 py-6 max-w-3xl mx-auto border-b border-slate-800">
         <div className="flex items-center gap-3">
           <Link
             href="/"
@@ -22,7 +22,7 @@ export default function HowItWorksPage() {
         </p>
       </header>
 
-      <div className="px-6 max-w-3xl mx-auto space-y-16 py-12">
+      <div className="px-4 sm:px-6 max-w-3xl mx-auto space-y-12 md:space-y-16 py-10 md:py-12">
         {/* 1. The problem */}
         <section>
           <h2 className="text-lg font-semibold text-slate-50 mb-4">
@@ -463,7 +463,7 @@ export default function HowItWorksPage() {
       </div>
 
       {/* Footer */}
-      <footer className="px-6 pb-12 max-w-3xl mx-auto border-t border-slate-800 pt-8">
+      <footer className="px-4 sm:px-6 pb-12 max-w-3xl mx-auto border-t border-slate-800 pt-8">
         <div className="flex flex-wrap gap-6 text-sm text-slate-500">
           <Link href="/" className="hover:text-slate-300 transition-colors">
             Home

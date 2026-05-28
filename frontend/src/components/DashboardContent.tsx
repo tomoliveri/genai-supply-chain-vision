@@ -7,21 +7,23 @@ import { MapPane } from '@/components/MapPane';
 import { BriefingDrawer } from '@/components/BriefingDrawer';
 import { StatsHeader } from '@/components/StatsHeader';
 import { slugifyLocationName } from '@/lib/slugs';
+import { List, Map } from 'lucide-react';
 
 interface DashboardContentProps {
   portSlug: string | null;
 }
 
+type MobileView = 'list' | 'map';
+
 export function DashboardContent({ portSlug }: DashboardContentProps) {
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
+  const [mobileView, setMobileView] = useState<MobileView>('list');
   const { locations, stats, loading, error } = useFirestoreData();
   const autoSelectedRef = useRef(false);
 
-  // Auto-select a port when deep-linked via ?port=<slug>
   useEffect(() => {
     if (!portSlug || autoSelectedRef.current || loading || locations.length === 0) return;
-
     const match = locations.find(
       (loc) => slugifyLocationName(loc.location_name) === portSlug
     );
@@ -40,56 +42,88 @@ export function DashboardContent({ portSlug }: DashboardContentProps) {
   const selectedLocation = locations.find((loc) => loc.id === selectedId) ?? null;
 
   return (
-    <div className="flex h-screen overflow-hidden bg-slate-950">
-      <Sidebar
-        locations={filteredLocations}
-        selectedId={selectedId}
-        onSelect={setSelectedId}
-        searchQuery={searchQuery}
-        onSearchChange={setSearchQuery}
-        stats={stats}
-      />
+    <div className="flex flex-col h-screen bg-slate-950">
+      {/* Content row — desktop: sidebar + map + drawer side by side */}
+      <div className="flex-1 flex overflow-hidden">
 
-      {/* Main area: stats header above map, proper flex layout — no overlap */}
-      <main className="flex-1 flex flex-col overflow-hidden relative">
-        {/* Loading overlay */}
-        {loading && (
-          <div className="absolute inset-0 z-20 flex items-center justify-center bg-slate-950">
-            <div className="flex flex-col items-center gap-4">
-              <div className="w-10 h-10 border-2 border-slate-700 border-t-blue-400 rounded-full animate-spin" />
-              <p className="text-sm text-slate-400">Loading locations…</p>
-            </div>
-          </div>
-        )}
-
-        {/* Error banner */}
-        {error && !loading && (
-          <div className="absolute top-4 left-1/2 -translate-x-1/2 z-20 bg-red-900/80 border border-red-700 text-red-200 text-sm px-4 py-2 rounded-lg max-w-sm text-center">
-            Failed to load data: {error.message}
-          </div>
-        )}
-
-        {/* Stats bar — in flow, not absolute */}
-        {!loading && locations.length > 0 && (
-          <StatsHeader stats={stats} />
-        )}
-
-        {/* Map fills remaining height */}
-        <div className="flex-1 relative">
-          <MapPane
+        {/* Sidebar — full width on mobile (list tab), fixed width on desktop */}
+        <div className={`flex flex-col overflow-hidden w-full md:w-80 md:shrink-0 ${
+          mobileView === 'list' ? 'flex' : 'hidden md:flex'
+        }`}>
+          <Sidebar
             locations={filteredLocations}
             selectedId={selectedId}
             onSelect={setSelectedId}
+            searchQuery={searchQuery}
+            onSearchChange={setSearchQuery}
+            stats={stats}
           />
         </div>
-      </main>
 
-      {selectedLocation && (
-        <BriefingDrawer
-          location={selectedLocation}
-          onClose={() => setSelectedId(null)}
-        />
-      )}
+        {/* Main area: stats + map */}
+        <main className={`flex-1 flex flex-col overflow-hidden relative ${
+          mobileView === 'map' ? 'flex' : 'hidden md:flex'
+        }`}>
+          {loading && (
+            <div className="absolute inset-0 z-20 flex items-center justify-center bg-slate-950">
+              <div className="flex flex-col items-center gap-4">
+                <div className="w-10 h-10 border-2 border-slate-700 border-t-blue-400 rounded-full animate-spin" />
+                <p className="text-sm text-slate-400">Loading locations…</p>
+              </div>
+            </div>
+          )}
+
+          {error && !loading && (
+            <div className="absolute top-4 left-1/2 -translate-x-1/2 z-20 bg-red-900/80 border border-red-700 text-red-200 text-sm px-4 py-2 rounded-lg max-w-sm text-center">
+              Failed to load data: {error.message}
+            </div>
+          )}
+
+          {!loading && locations.length > 0 && (
+            <StatsHeader stats={stats} />
+          )}
+
+          <div className="flex-1 relative">
+            <MapPane
+              locations={filteredLocations}
+              selectedId={selectedId}
+              onSelect={setSelectedId}
+            />
+          </div>
+        </main>
+
+        {/* Briefing drawer — full-screen overlay on mobile, side panel on desktop */}
+        {selectedLocation && (
+          <BriefingDrawer
+            location={selectedLocation}
+            onClose={() => setSelectedId(null)}
+          />
+        )}
+      </div>
+
+      {/* Mobile bottom tab bar */}
+      <div className="md:hidden shrink-0 flex border-t border-slate-700/80 bg-slate-900">
+        <button
+          type="button"
+          onClick={() => setMobileView('list')}
+          className={`flex-1 flex flex-col items-center gap-0.5 py-2.5 text-xs font-medium transition-colors ${
+            mobileView === 'list' ? 'text-blue-400' : 'text-slate-500'
+          }`}
+        >
+          <List className="w-4 h-4" />
+          Ports
+        </button>
+        <button
+          type="button"
+          onClick={() => setMobileView('map')}
+          className={`flex-1 flex flex-col items-center gap-0.5 py-2.5 text-xs font-medium transition-colors ${
+            mobileView === 'map' ? 'text-blue-400' : 'text-slate-500'
+          }`}
+        >
+          <Map className="w-4 h-4" />
+          Map
+        </button>
+      </div>
     </div>
   );
 }

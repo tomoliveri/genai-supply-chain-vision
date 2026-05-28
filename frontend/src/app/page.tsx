@@ -83,7 +83,7 @@ export default function LandingPage() {
       />
 
       {/* Hero */}
-      <section className="relative px-6 pt-20 pb-16 md:pt-32 md:pb-24 max-w-4xl mx-auto">
+      <section className="relative px-4 sm:px-6 pt-20 pb-16 md:pt-32 md:pb-24 max-w-4xl mx-auto">
 
         {/* Eyebrow */}
         <div className="inline-flex items-center gap-2 rounded-full border border-blue-500/30 bg-blue-500/10 px-3 py-1 text-xs font-medium text-blue-400 mb-8">
@@ -94,7 +94,7 @@ export default function LandingPage() {
           Live — updated daily
         </div>
 
-        <h1 className="text-4xl md:text-6xl font-bold tracking-tight text-slate-50 leading-[1.1]">
+        <h1 className="text-3xl sm:text-4xl md:text-6xl font-bold tracking-tight text-slate-50 leading-[1.1]">
           Know about port disruptions{' '}
           <span className="bg-gradient-to-r from-blue-400 via-indigo-400 to-purple-400 bg-clip-text text-transparent">
             before your freight forwarder does
@@ -141,12 +141,12 @@ export default function LandingPage() {
       </section>
 
       {/* Divider */}
-      <div className="max-w-4xl mx-auto px-6">
+      <div className="max-w-4xl mx-auto px-4 sm:px-6">
         <div className="h-px bg-gradient-to-r from-transparent via-slate-800 to-transparent" />
       </div>
 
       {/* How it works */}
-      <section className="px-6 py-20 max-w-4xl mx-auto">
+      <section className="px-4 sm:px-6 py-20 max-w-4xl mx-auto">
         <p className="text-xs font-semibold uppercase tracking-widest text-slate-500 mb-3">How it works</p>
         <h2 className="text-2xl md:text-3xl font-bold text-slate-50 mb-12">
           Fully automated. Zero manual steps.
@@ -164,12 +164,12 @@ export default function LandingPage() {
       </section>
 
       {/* Divider */}
-      <div className="max-w-4xl mx-auto px-6">
+      <div className="max-w-4xl mx-auto px-4 sm:px-6">
         <div className="h-px bg-gradient-to-r from-transparent via-slate-800 to-transparent" />
       </div>
 
       {/* Signal types */}
-      <section className="px-6 py-20 max-w-4xl mx-auto">
+      <section className="px-4 sm:px-6 py-20 max-w-4xl mx-auto">
         <p className="text-xs font-semibold uppercase tracking-widest text-slate-500 mb-3">Signal types</p>
         <h2 className="text-2xl md:text-3xl font-bold text-slate-50 mb-12">
           Four data sources in every briefing
@@ -191,12 +191,12 @@ export default function LandingPage() {
       </section>
 
       {/* Divider */}
-      <div className="max-w-4xl mx-auto px-6">
+      <div className="max-w-4xl mx-auto px-4 sm:px-6">
         <div className="h-px bg-gradient-to-r from-transparent via-slate-800 to-transparent" />
       </div>
 
       {/* Beira example */}
-      <section className="px-6 py-20 max-w-4xl mx-auto">
+      <section className="px-4 sm:px-6 py-20 max-w-4xl mx-auto">
         <p className="text-xs font-semibold uppercase tracking-widest text-slate-500 mb-3">Example briefing</p>
         <h2 className="text-2xl md:text-3xl font-bold text-slate-50 mb-8">
           Imagery and external data, together
@@ -252,12 +252,12 @@ export default function LandingPage() {
       </section>
 
       {/* Divider */}
-      <div className="max-w-4xl mx-auto px-6">
+      <div className="max-w-4xl mx-auto px-4 sm:px-6">
         <div className="h-px bg-gradient-to-r from-transparent via-slate-800 to-transparent" />
       </div>
 
       {/* Bottom CTA */}
-      <section className="px-6 py-20 max-w-4xl mx-auto text-center">
+      <section className="px-4 sm:px-6 py-20 max-w-4xl mx-auto text-center">
         <h2 className="text-2xl md:text-3xl font-bold text-slate-50 mb-3">
           All 68 ports are live
         </h2>
@@ -266,7 +266,7 @@ export default function LandingPage() {
         </p>
         <Link
           href="/demo"
-          className="inline-flex items-center gap-2 rounded-lg bg-blue-600 px-6 py-3 text-sm font-semibold text-white hover:bg-blue-500 transition-colors shadow-lg shadow-blue-500/20"
+          className="inline-flex items-center gap-2 rounded-lg bg-blue-600 px-4 sm:px-6 py-3 text-sm font-semibold text-white hover:bg-blue-500 transition-colors shadow-lg shadow-blue-500/20"
         >
           Open the dashboard
           <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
@@ -276,7 +276,7 @@ export default function LandingPage() {
       </section>
 
       {/* Footer */}
-      <footer className="px-6 pb-12 max-w-4xl mx-auto border-t border-slate-800 pt-8">
+      <footer className="px-4 sm:px-6 pb-12 max-w-4xl mx-auto border-t border-slate-800 pt-8">
         <div className="flex flex-wrap gap-6 text-sm text-slate-500">
           <Link href="/demo" className="hover:text-slate-300 transition-colors">
             Live dashboard

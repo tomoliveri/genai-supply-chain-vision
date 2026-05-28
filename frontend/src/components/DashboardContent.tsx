@@ -42,9 +42,12 @@ export function DashboardContent({ portSlug }: DashboardContentProps) {
   const selectedLocation = locations.find((loc) => loc.id === selectedId) ?? null;
 
   return (
-    <div className="flex flex-col h-[100dvh] bg-slate-950">
-      {/* Content row — desktop: sidebar + map + drawer side by side */}
-      <div className="flex-1 flex overflow-hidden">
+    // `relative` here is the containing block for the mobile absolute overlay below.
+    // Do NOT put overflow:hidden on this element — that would clip the overlay on iOS Safari.
+    <div className="flex flex-col h-[100dvh] bg-slate-950 relative">
+
+      {/* Content row — overflow:hidden keeps the desktop flex layout tight */}
+      <div className="flex-1 flex overflow-hidden min-h-0">
 
         {/* Sidebar — full width on mobile (list tab), fixed width on desktop */}
         <div className={`flex flex-col overflow-hidden w-full md:w-80 md:shrink-0 ${
@@ -60,7 +63,7 @@ export function DashboardContent({ portSlug }: DashboardContentProps) {
           />
         </div>
 
-        {/* Main area: stats + map */}
+        {/* Map area */}
         <main className={`flex-1 flex flex-col overflow-hidden relative ${
           mobileView === 'map' ? 'flex' : 'hidden md:flex'
         }`}>
@@ -92,12 +95,14 @@ export function DashboardContent({ portSlug }: DashboardContentProps) {
           </div>
         </main>
 
-        {/* Briefing drawer — full-screen overlay on mobile, side panel on desktop */}
+        {/* Desktop briefing drawer — inside the overflow:hidden row, no fixed positioning */}
         {selectedLocation && (
-          <BriefingDrawer
-            location={selectedLocation}
-            onClose={() => setSelectedId(null)}
-          />
+          <div className="hidden md:block w-[420px] shrink-0 h-full">
+            <BriefingDrawer
+              location={selectedLocation}
+              onClose={() => setSelectedId(null)}
+            />
+          </div>
         )}
       </div>
 
@@ -124,6 +129,21 @@ export function DashboardContent({ portSlug }: DashboardContentProps) {
           Map
         </button>
       </div>
+
+      {/*
+        Mobile briefing drawer overlay.
+        Rendered as absolute within this `relative` container, NOT inside the
+        overflow:hidden row above. This sidesteps the iOS Safari bug where
+        fixed/absolute descendants of overflow:hidden containers get clipped.
+      */}
+      {selectedLocation && (
+        <div className="md:hidden absolute inset-0 z-50">
+          <BriefingDrawer
+            location={selectedLocation}
+            onClose={() => setSelectedId(null)}
+          />
+        </div>
+      )}
     </div>
   );
 }

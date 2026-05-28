@@ -70,7 +70,7 @@ const steps = [
 
 export default function LandingPage() {
   return (
-    <div className="min-h-screen bg-slate-950 text-slate-200 antialiased">
+    <div className="min-h-[100dvh] bg-slate-950 text-slate-200 antialiased">
 
       {/* Background grid */}
       <div

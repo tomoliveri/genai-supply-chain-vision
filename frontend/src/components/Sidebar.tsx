@@ -22,7 +22,7 @@ export function Sidebar({
   stats,
 }: SidebarProps) {
   return (
-    <aside className="w-80 shrink-0 flex flex-col bg-slate-900 border-r border-slate-700 overflow-hidden">
+    <aside className="w-full h-full flex flex-col bg-slate-900 border-r border-slate-700 overflow-hidden">
       {/* Header */}
       <div className="flex items-center gap-2.5 px-4 py-4 border-b border-slate-700">
         <Satellite className="w-5 h-5 text-blue-400 shrink-0" />

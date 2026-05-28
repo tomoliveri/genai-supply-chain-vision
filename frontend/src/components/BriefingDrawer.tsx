@@ -113,7 +113,7 @@ export function BriefingDrawer({ location, onClose }: BriefingDrawerProps) {
 
   return (
     <aside
-      className="fixed inset-0 z-50 flex flex-col md:relative md:inset-auto md:z-auto md:w-[420px] md:shrink-0 bg-slate-900 border-l border-slate-700 overflow-hidden animate-slide-in"
+      className="h-full w-full flex flex-col bg-slate-900 border-l border-slate-700 overflow-hidden animate-slide-in"
       aria-label="Location briefing"
     >
       {/* Header */}

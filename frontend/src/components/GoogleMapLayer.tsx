@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { importLibrary, setOptions } from '@googlemaps/js-api-loader';
 import type { LocationWithBriefing } from '@/lib/types';
+import { computeAoiBounds } from '@/lib/geo';
 import { SEVERITY_COLORS } from '@/lib/severity';
 
 interface GoogleMapLayerProps {
@@ -30,16 +31,48 @@ const MAP_TYPE_LABELS: Record<string, string> = {
   hybrid: 'Hybrid',
 };
 
+interface MapOverlay {
+  marker: google.maps.Marker;
+  polygon: google.maps.Polygon;
+}
+
+function makeMarkerIcon(color: string, isSelected: boolean): google.maps.Symbol {
+  return {
+    path: google.maps.SymbolPath.CIRCLE,
+    scale: isSelected ? 8 : 6,
+    fillColor: color,
+    fillOpacity: 1,
+    strokeColor: 'white',
+    strokeWeight: 2,
+  };
+}
+
+function makeAoiPath(loc: LocationWithBriefing): google.maps.LatLngLiteral[] {
+  const [[south, west], [north, east]] = computeAoiBounds(loc.latitude, loc.longitude);
+  return [
+    { lat: south, lng: west },
+    { lat: north, lng: west },
+    { lat: north, lng: east },
+    { lat: south, lng: east },
+  ];
+}
+
 export function GoogleMapLayer({ locations, selectedId, onSelect }: GoogleMapLayerProps) {
   const mapRef = useRef<google.maps.Map | null>(null);
   const containerRef = useRef<HTMLDivElement | null>(null);
-  const markersRef = useRef<google.maps.Marker[]>([]);
-  const polygonsRef = useRef<google.maps.Polygon[]>([]);
+  const overlaysRef = useRef<Map<string, MapOverlay>>(new Map());
+  const onSelectRef = useRef(onSelect);
+  const hasFitBoundsRef = useRef(false);
   const [mapType, setMapType] = useState<string>('roadmap');
   const [mapReady, setMapReady] = useState(false);
 
+  useEffect(() => {
+    onSelectRef.current = onSelect;
+  }, [onSelect]);
+
   // Load Maps API + create map
   useEffect(() => {
+    const overlays = overlaysRef.current;
     setOptions({ key: process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY ?? '' });
     importLibrary('maps' as never).then(() => {
       if (!containerRef.current) return;
@@ -52,8 +85,8 @@ export function GoogleMapLayer({ locations, selectedId, onSelect }: GoogleMapLay
           latLngBounds: { north: 85, south: -85, west: -180, east: 180 },
           strictBounds: true,
         },
-        mapTypeId: mapType as google.maps.MapTypeId,
-        styles: mapType === 'roadmap' ? DARK_STYLE : undefined,
+        mapTypeId: 'roadmap' as google.maps.MapTypeId,
+        styles: DARK_STYLE,
         disableDefaultUI: true,
         zoomControl: true,
         zoomControlOptions: { position: google.maps.ControlPosition.RIGHT_BOTTOM },
@@ -63,6 +96,14 @@ export function GoogleMapLayer({ locations, selectedId, onSelect }: GoogleMapLay
       mapRef.current = map;
       setMapReady(true);
     });
+
+    return () => {
+      for (const overlay of overlays.values()) {
+        overlay.marker.setMap(null);
+        overlay.polygon.setMap(null);
+      }
+      overlays.clear();
+    };
   }, []);
 
   // Update map type
@@ -74,9 +115,9 @@ export function GoogleMapLayer({ locations, selectedId, onSelect }: GoogleMapLay
     });
   }, [mapType]);
 
-  // Fit bounds on first load
+  // Fit bounds once, after the first non-empty Firestore payload arrives.
   useEffect(() => {
-    if (!mapRef.current || !mapReady || locations.length === 0) return;
+    if (!mapRef.current || !mapReady || hasFitBoundsRef.current || locations.length === 0) return;
     const bounds = new google.maps.LatLngBounds();
     let hasPoints = false;
     for (const loc of locations) {
@@ -85,61 +126,68 @@ export function GoogleMapLayer({ locations, selectedId, onSelect }: GoogleMapLay
     }
     if (hasPoints) {
       mapRef.current.fitBounds(bounds, { top: 50, right: 50, bottom: 50, left: 350 });
+      hasFitBoundsRef.current = true;
     }
-  }, [mapReady]);
+  }, [locations, mapReady]);
 
-  // Sync markers
+  // Sync markers without recreating every overlay on each Firestore snapshot.
   useEffect(() => {
-    if (!mapRef.current) return;
+    if (!mapRef.current || !mapReady) return;
 
-    // Clear old
-    for (const m of markersRef.current) m.setMap(null);
-    for (const p of polygonsRef.current) p.setMap(null);
-    markersRef.current = [];
-    polygonsRef.current = [];
-
+    const activeIds = new Set<string>();
     for (const loc of locations) {
+      activeIds.add(loc.id);
       const color = SEVERITY_COLORS[loc.severityScore] ?? '#64748b';
       const isSelected = selectedId === loc.id;
+      const position = { lat: loc.latitude, lng: loc.longitude };
+      const icon = makeMarkerIcon(color, isSelected);
+      const existing = overlaysRef.current.get(loc.id);
 
-      // Marker
+      if (existing) {
+        existing.marker.setPosition(position);
+        existing.marker.setTitle(loc.location_name);
+        existing.marker.setIcon(icon);
+        existing.marker.setZIndex(isSelected ? 20 : 10);
+        existing.polygon.setPath(makeAoiPath(loc));
+        existing.polygon.setOptions({
+          strokeColor: color,
+          fillColor: color,
+          zIndex: isSelected ? 20 : 10,
+        });
+        continue;
+      }
+
       const marker = new google.maps.Marker({
-        position: { lat: loc.latitude, lng: loc.longitude },
+        position,
         map: mapRef.current,
         title: loc.location_name,
-        icon: {
-          path: google.maps.SymbolPath.CIRCLE,
-          scale: isSelected ? 8 : 6,
-          fillColor: color,
-          fillOpacity: 1,
-          strokeColor: 'white',
-          strokeWeight: 2,
-        },
+        icon,
+        zIndex: isSelected ? 20 : 10,
       });
-      marker.addListener('click', () => onSelect(loc.id));
-      markersRef.current.push(marker);
+      marker.addListener('click', () => onSelectRef.current(loc.id));
 
-      // AOI rectangle
-      const latDelta = 0.009;
-      const lonDelta = 0.009 / Math.cos((loc.latitude * Math.PI) / 180);
       const polygon = new google.maps.Polygon({
-        paths: [
-          { lat: loc.latitude - latDelta, lng: loc.longitude - lonDelta },
-          { lat: loc.latitude + latDelta, lng: loc.longitude - lonDelta },
-          { lat: loc.latitude + latDelta, lng: loc.longitude + lonDelta },
-          { lat: loc.latitude - latDelta, lng: loc.longitude + lonDelta },
-        ],
+        paths: makeAoiPath(loc),
         strokeColor: color,
         strokeWeight: 1.5,
         strokeOpacity: 0.7,
         fillColor: color,
         fillOpacity: 0.12,
         map: mapRef.current,
+        zIndex: isSelected ? 20 : 10,
       });
-      polygon.addListener('click', () => onSelect(loc.id));
-      polygonsRef.current.push(polygon);
+      polygon.addListener('click', () => onSelectRef.current(loc.id));
+      overlaysRef.current.set(loc.id, { marker, polygon });
     }
-  }, [locations, selectedId, mapReady, onSelect]);
+
+    for (const [id, overlay] of overlaysRef.current) {
+      if (!activeIds.has(id)) {
+        overlay.marker.setMap(null);
+        overlay.polygon.setMap(null);
+        overlaysRef.current.delete(id);
+      }
+    }
+  }, [locations, selectedId, mapReady]);
 
   return (
     <div style={{ width: '100%', height: '100%', position: 'relative' }}>

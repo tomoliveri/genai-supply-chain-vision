@@ -130,21 +130,40 @@
     ]
   },
   {
-    "id": "beira-weather-2026",
+    "id": "beira-congestion-2026",
     "region": "Southern Africa",
-    "category": "weather",
-    "title": "Beira Port — Severe Weather Disruption",
-    "description": "Beira port, Mozambique, running at approximately 12.5 days vessel waiting time due to severe weather events including tropical storm conditions. The port is exposed to the Mozambique Channel and has limited sheltered berthing.",
+    "category": "congestion",
+    "title": "Beira Port — Severe Systemic Congestion",
+    "description": "Beira port, Mozambique, is experiencing severe systemic congestion rather than an active severe-weather closure. Latest operational indicators show high yard pressure, a fully occupied berth line, and double-digit vessel waiting times driven by equipment constraints, yard saturation, and ripple effects from earlier seasonal disruptions. Current weather context should not be treated as the primary cause unless Open-Meteo or direct port notices show severe conditions on the analysis date.",
     "severity": 5,
     "affected_ports": ["Beira"],
     "start_date": "2026-03-15",
-    "end_date": "2026-05-31",
+    "end_date": "2026-06-30",
     "status": "active",
     "impacts": [
-      "12.5 days average vessel waiting time",
-      "Severe weather — tropical storm conditions",
-      "Limited sheltered berthing at exposed port",
-      "Mozambique Channel weather patterns"
+      "Double-digit vessel waiting times reported for Beira",
+      "Yard pressure around 85% fill in latest briefing",
+      "10 vessels at berth and 0 at anchorage indicates saturated berth and yard capacity",
+      "Equipment constraints and high yard utilization slowing cargo flow",
+      "Earlier seasonal disruptions may be contributing residual backlog, but current severe weather is not the active cause"
+    ]
+  },
+  {
+    "id": "beira-en6-security-2026",
+    "region": "Southern Africa",
+    "category": "security_incident",
+    "title": "Beira Corridor — EN6 Armed Attack Risk",
+    "description": "Security risk remains elevated along the EN6 transport corridor linking Beira with Chimoio and inland markets. Armed attack risk on the corridor can affect truck reliability and inland clearance even when the port itself remains physically operational.",
+    "severity": 4,
+    "affected_ports": ["Beira"],
+    "start_date": "2026-03-01",
+    "end_date": "2026-12-31",
+    "status": "active",
+    "impacts": [
+      "High geopolitical and corridor security risk",
+      "Armed attack risk along the EN6 Beira-Chimoio corridor",
+      "Potential trucking delays and convoy/security constraints inland",
+      "Inland logistics reliability reduced despite port-side operations continuing"
     ]
   },
   {

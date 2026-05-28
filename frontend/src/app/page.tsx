@@ -2,290 +2,254 @@ import Link from 'next/link';
 
 const stats = [
   { label: 'Ports monitored', value: '68' },
-  { label: 'Analysis frequency', value: 'Daily' },
-  { label: 'Monthly cost', value: 'AUD $25' },
-  { label: 'Imagery cost', value: 'Free' },
+  { label: 'Run cadence', value: 'Daily' },
+  { label: 'Demo cost', value: '< AUD $25/mo' },
+  { label: 'Source imagery', value: 'Sentinel-2' },
 ];
 
 const signals = [
   {
-    icon: (
-      <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}>
-        <path strokeLinecap="round" strokeLinejoin="round" d="M3 15a4 4 0 004 4h9a5 5 0 10-.1-9.999 5.002 5.002 0 10-9.78 2.096A4.001 4.001 0 003 15z" />
-      </svg>
-    ),
-    color: 'bg-cyan-500/10 text-cyan-400 border-cyan-500/20',
-    label: 'Weather events',
-    desc: 'Tropical storms, fog, high swell, wind suspensions. Cross-referenced with Open-Meteo archive data.',
+    label: 'Weather',
+    desc: 'Storms, fog, high swell, wind suspensions, and flooding from Open-Meteo context plus visible imagery changes.',
   },
   {
-    icon: (
-      <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}>
-        <path strokeLinecap="round" strokeLinejoin="round" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
-      </svg>
-    ),
-    color: 'bg-amber-500/10 text-amber-400 border-amber-500/20',
-    label: 'Port congestion',
-    desc: 'Vessel waiting times, yard fill, crane outages. Detected from imagery and shipping intelligence.',
+    label: 'Congestion',
+    desc: 'Vessel queues, berth saturation, yard pressure, equipment constraints, and dwell-time indicators.',
   },
   {
-    icon: (
-      <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}>
-        <path strokeLinecap="round" strokeLinejoin="round" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
-      </svg>
-    ),
-    color: 'bg-yellow-500/10 text-yellow-400 border-yellow-500/20',
-    label: 'Labour actions',
-    desc: 'Strike warnings, active stoppages, overtime bans. Tracked across major ports with 14-day advance warning.',
+    label: 'Labour',
+    desc: 'Strike warnings, active stoppages, overtime bans, and port-wide industrial action.',
   },
   {
-    icon: (
-      <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}>
-        <path strokeLinecap="round" strokeLinejoin="round" d="M3.055 11H5a2 2 0 012 2v1a2 2 0 002 2 2 2 0 012 2v2.945M8 3.935V5.5A2.5 2.5 0 0010.5 8h.5a2 2 0 012 2 2 2 0 104 0 2 2 0 012-2h1.064M15 20.488V18a2 2 0 012-2h3.064M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-      </svg>
-    ),
-    color: 'bg-red-500/10 text-red-400 border-red-500/20',
-    label: 'Geopolitical events',
-    desc: '18 tracked events: armed conflicts, court rulings voiding concessions, carrier rerouting, insurance spikes.',
+    label: 'Geopolitical',
+    desc: '19 tracked events covering conflict, security incidents, court rulings, route disruption, and trade policy.',
   },
 ];
 
 const steps = [
   {
     n: '01',
-    title: 'Imagery acquired',
-    desc: 'Cloud Scheduler triggers the pipeline at 2am UTC. The latest Sentinel-2 L2A scene is fetched per port from the Copernicus Data Space API, cropped to a 2km AOI and cached in GCS.',
+    title: 'Acquire',
+    desc: 'Cloud Scheduler starts the batch job. Each port gets the latest low-cloud Sentinel-2 scene, cropped to the port AOI and cached in GCS.',
   },
   {
     n: '02',
-    title: 'Gemini analyses',
-    desc: 'Two-stage analysis: Gemini first describes the imagery, then assesses it against weather data, labour events and geopolitical signals. External context can override ambiguous imagery.',
+    title: 'Assess',
+    desc: 'Gemini first describes the imagery, then produces a structured assessment using imagery plus weather, labour, and geopolitical context.',
   },
   {
     n: '03',
-    title: 'Briefing written',
-    desc: 'A structured briefing lands in Firestore: severity score, confidence grade, disruption category, vessel counts, yard fill percentage. Visible in the dashboard within minutes of the run completing.',
+    title: 'Brief',
+    desc: 'Firestore receives a typed briefing with severity, confidence, category, vessel counts, yard fill, and the analyst summary.',
   },
 ];
 
 export default function LandingPage() {
   return (
-    <div className="min-h-[100dvh] bg-slate-950 text-slate-200 antialiased">
-
-      {/* Background grid */}
-      <div
-        className="pointer-events-none fixed inset-0 opacity-[0.03]"
-        style={{
-          backgroundImage:
-            'linear-gradient(to right, #94a3b8 1px, transparent 1px), linear-gradient(to bottom, #94a3b8 1px, transparent 1px)',
-          backgroundSize: '60px 60px',
-        }}
-      />
-
-      {/* Hero */}
-      <section className="relative px-4 sm:px-6 pt-20 pb-16 md:pt-32 md:pb-24 max-w-4xl mx-auto">
-
-        {/* Eyebrow */}
-        <div className="inline-flex items-center gap-2 rounded-full border border-blue-500/30 bg-blue-500/10 px-3 py-1 text-xs font-medium text-blue-400 mb-8">
-          <span className="relative flex h-1.5 w-1.5">
-            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-blue-400 opacity-75" />
-            <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-blue-500" />
-          </span>
-          Live — updated daily
-        </div>
-
-        <h1 className="text-3xl sm:text-4xl md:text-6xl font-bold tracking-tight text-slate-50 leading-[1.1]">
-          Know about port disruptions{' '}
-          <span className="bg-gradient-to-r from-blue-400 via-indigo-400 to-purple-400 bg-clip-text text-transparent">
-            before your freight forwarder does
-          </span>
-        </h1>
-
-        <p className="mt-6 text-lg text-slate-400 max-w-2xl leading-relaxed">
-          SupplyWatch monitors 68 major ports daily with free Sentinel-2
-          satellite imagery and Gemini Flash. Every port gets a structured
-          disruption briefing, every day.
-        </p>
-
-        {/* Stat row */}
-        <div className="mt-8 flex flex-wrap gap-3">
-          {stats.map((s) => (
-            <div
-              key={s.label}
-              className="flex items-center gap-2 rounded-lg border border-slate-800 bg-slate-900 px-3 py-2"
-            >
-              <span className="text-sm font-semibold text-slate-100">{s.value}</span>
-              <span className="text-xs text-slate-500">{s.label}</span>
-            </div>
-          ))}
-        </div>
-
-        {/* CTAs */}
-        <div className="mt-8 flex flex-wrap gap-3">
-          <Link
-            href="/demo"
-            className="inline-flex items-center gap-2 rounded-lg bg-blue-600 px-5 py-2.5 text-sm font-semibold text-white hover:bg-blue-500 transition-colors shadow-lg shadow-blue-500/20"
-          >
-            Open the dashboard
-            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-              <path strokeLinecap="round" strokeLinejoin="round" d="M13 7l5 5m0 0l-5 5m5-5H6" />
-            </svg>
+    <div className="min-h-[100dvh] bg-[#f5f2ea] text-[#171713] antialiased">
+      <header className="border-b border-[#d8d0c0]">
+        <div className="mx-auto flex max-w-6xl items-center justify-between px-4 py-4 sm:px-6">
+          <Link href="/" className="text-sm font-semibold tracking-tight">
+            SupplyWatch
           </Link>
-          <Link
-            href="/how-it-works"
-            className="inline-flex items-center gap-2 rounded-lg border border-slate-700 px-5 py-2.5 text-sm font-semibold text-slate-300 hover:border-slate-500 hover:text-slate-100 transition-colors"
-          >
-            Engineering story
-          </Link>
+          <nav className="flex items-center gap-5 text-sm text-[#5f5a4f]">
+            <Link href="/demo" className="hover:text-[#171713]">
+              Dashboard
+            </Link>
+            <Link href="/how-it-works" className="hover:text-[#171713]">
+              Engineering
+            </Link>
+          </nav>
         </div>
-      </section>
+      </header>
 
-      {/* Divider */}
-      <div className="max-w-4xl mx-auto px-4 sm:px-6">
-        <div className="h-px bg-gradient-to-r from-transparent via-slate-800 to-transparent" />
-      </div>
-
-      {/* How it works */}
-      <section className="px-4 sm:px-6 py-20 max-w-4xl mx-auto">
-        <p className="text-xs font-semibold uppercase tracking-widest text-slate-500 mb-3">How it works</p>
-        <h2 className="text-2xl md:text-3xl font-bold text-slate-50 mb-12">
-          Fully automated. Zero manual steps.
-        </h2>
-
-        <div className="grid md:grid-cols-3 gap-6">
-          {steps.map((step) => (
-            <div key={step.n} className="relative rounded-xl border border-slate-800 bg-slate-900/60 p-6">
-              <div className="text-3xl font-black text-slate-800 mb-4 select-none">{step.n}</div>
-              <h3 className="text-sm font-semibold text-slate-100 mb-2">{step.title}</h3>
-              <p className="text-sm text-slate-400 leading-relaxed">{step.desc}</p>
+      <main>
+        <section className="mx-auto grid max-w-6xl gap-10 px-4 py-14 sm:px-6 md:grid-cols-[1.05fr_0.95fr] md:py-20">
+          <div>
+            <p className="mb-4 text-xs font-semibold uppercase tracking-[0.18em] text-[#776f60]">
+              Daily geospatial supply-chain briefings
+            </p>
+            <h1 className="max-w-3xl text-4xl font-semibold leading-tight tracking-tight text-[#171713] md:text-6xl">
+              Port disruption intelligence from satellite imagery and external signals.
+            </h1>
+            <p className="mt-6 max-w-2xl text-base leading-7 text-[#5f5a4f] md:text-lg">
+              SupplyWatch monitors 68 major ports with Sentinel-2 imagery,
+              Gemini Flash, and curated operational context. The dashboard is a
+              live demo: no account required.
+            </p>
+            <div className="mt-8 flex flex-wrap gap-3">
+              <Link
+                href="/demo"
+                className="inline-flex min-h-11 items-center rounded-md bg-[#171713] px-5 text-sm font-semibold text-[#f5f2ea] hover:bg-[#343126]"
+              >
+                Open dashboard
+              </Link>
+              <Link
+                href="/how-it-works"
+                className="inline-flex min-h-11 items-center rounded-md border border-[#bdb39f] px-5 text-sm font-semibold text-[#343126] hover:border-[#171713]"
+              >
+                Read engineering story
+              </Link>
             </div>
-          ))}
-        </div>
-      </section>
+          </div>
 
-      {/* Divider */}
-      <div className="max-w-4xl mx-auto px-4 sm:px-6">
-        <div className="h-px bg-gradient-to-r from-transparent via-slate-800 to-transparent" />
-      </div>
+          <div className="self-end rounded-md border border-[#cfc6b4] bg-[#fbfaf6] p-4 shadow-sm">
+            <div className="border-b border-[#dfd8ca] pb-3">
+              <p className="text-xs font-semibold uppercase tracking-[0.16em] text-[#776f60]">
+                Current briefing format
+              </p>
+              <div className="mt-3 flex items-start justify-between gap-4">
+                <div>
+                  <h2 className="text-lg font-semibold">Port of Beira, Mozambique</h2>
+                  <p className="mt-1 text-sm text-[#6d6558]">
+                    Severity 5/5 · High confidence · Congestion
+                  </p>
+                </div>
+                <span className="rounded-sm bg-[#9f2d20] px-2 py-1 text-xs font-semibold text-white">
+                  Active
+                </span>
+              </div>
+            </div>
 
-      {/* Signal types */}
-      <section className="px-4 sm:px-6 py-20 max-w-4xl mx-auto">
-        <p className="text-xs font-semibold uppercase tracking-widest text-slate-500 mb-3">Signal types</p>
-        <h2 className="text-2xl md:text-3xl font-bold text-slate-50 mb-12">
-          Four data sources in every briefing
-        </h2>
-
-        <div className="grid md:grid-cols-2 gap-4">
-          {signals.map((s) => (
-            <div key={s.label} className="rounded-xl border border-slate-800 bg-slate-900/60 p-5 flex gap-4">
-              <div className={`shrink-0 inline-flex items-center justify-center w-10 h-10 rounded-lg border ${s.color}`}>
-                {s.icon}
+            <div className="grid gap-3 py-4 text-sm sm:grid-cols-3">
+              <div>
+                <p className="text-xs uppercase tracking-[0.14em] text-[#8a8172]">Yard fill</p>
+                <p className="mt-1 text-2xl font-semibold">85%</p>
               </div>
               <div>
-                <h3 className="text-sm font-semibold text-slate-100 mb-1">{s.label}</h3>
-                <p className="text-sm text-slate-400 leading-relaxed">{s.desc}</p>
+                <p className="text-xs uppercase tracking-[0.14em] text-[#8a8172]">At berth</p>
+                <p className="mt-1 text-2xl font-semibold">10</p>
+              </div>
+              <div>
+                <p className="text-xs uppercase tracking-[0.14em] text-[#8a8172]">Anchorage</p>
+                <p className="mt-1 text-2xl font-semibold">0</p>
               </div>
             </div>
-          ))}
-        </div>
-      </section>
 
-      {/* Divider */}
-      <div className="max-w-4xl mx-auto px-4 sm:px-6">
-        <div className="h-px bg-gradient-to-r from-transparent via-slate-800 to-transparent" />
-      </div>
+            <p className="border-t border-[#dfd8ca] pt-3 text-sm leading-6 text-[#5f5a4f]">
+              Double-digit vessel waiting times and high yard utilization point
+              to severe congestion even though the terminal still appears active
+              from orbit.
+            </p>
+          </div>
+        </section>
 
-      {/* Beira example */}
-      <section className="px-4 sm:px-6 py-20 max-w-4xl mx-auto">
-        <p className="text-xs font-semibold uppercase tracking-widest text-slate-500 mb-3">Example briefing</p>
-        <h2 className="text-2xl md:text-3xl font-bold text-slate-50 mb-8">
-          Imagery and external data, together
-        </h2>
+        <section className="border-y border-[#d8d0c0] bg-[#ebe5d8]">
+          <div className="mx-auto grid max-w-6xl gap-px px-4 py-px sm:grid-cols-4 sm:px-6">
+            {stats.map((s) => (
+              <div key={s.label} className="bg-[#ebe5d8] py-5 sm:bg-[#f5f2ea] sm:px-5">
+                <p className="text-2xl font-semibold tracking-tight">{s.value}</p>
+                <p className="mt-1 text-xs uppercase tracking-[0.14em] text-[#776f60]">{s.label}</p>
+              </div>
+            ))}
+          </div>
+        </section>
 
-        <div className="rounded-xl border border-red-900/40 bg-gradient-to-br from-red-950/30 to-slate-900/60 p-6 md:p-8">
-          <div className="flex items-center gap-3 mb-5">
-            <div className="flex items-center justify-center w-8 h-8 rounded-full bg-red-500/20 shrink-0">
-              <svg className="w-4 h-4 text-red-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.34 16.5c-.77.833.192 2.5 1.732 2.5z" />
-              </svg>
-            </div>
+        <section className="mx-auto max-w-6xl px-4 py-14 sm:px-6 md:py-18">
+          <div className="grid gap-8 md:grid-cols-[0.8fr_1.2fr]">
             <div>
-              <h3 className="text-base font-semibold text-red-300">Port of Beira, Mozambique</h3>
-              <p className="text-xs text-slate-500">Severity 5/5 · Confidence: High · March 2026</p>
+              <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[#776f60]">
+                Pipeline
+              </p>
+              <h2 className="mt-3 text-2xl font-semibold tracking-tight md:text-3xl">
+                Three stages, no manual review step.
+              </h2>
+            </div>
+            <div className="grid gap-4">
+              {steps.map((step) => (
+                <div key={step.n} className="grid gap-4 border-t border-[#d8d0c0] pt-4 sm:grid-cols-[4rem_1fr]">
+                  <p className="font-mono text-sm text-[#8a8172]">{step.n}</p>
+                  <div>
+                    <h3 className="text-sm font-semibold">{step.title}</h3>
+                    <p className="mt-1 text-sm leading-6 text-[#5f5a4f]">{step.desc}</p>
+                  </div>
+                </div>
+              ))}
             </div>
           </div>
+        </section>
 
-          <div className="grid md:grid-cols-2 gap-6">
-            <div className="rounded-lg border border-slate-800 bg-slate-900/50 p-4">
-              <p className="text-xs font-semibold uppercase tracking-widest text-slate-500 mb-2">Satellite imagery said</p>
-              <p className="text-sm text-slate-300 leading-relaxed">
-                Vessels at berth. Yard stacks at expected levels. Cranes
-                operating. Normal.
-              </p>
-            </div>
-            <div className="rounded-lg border border-red-900/40 bg-red-950/20 p-4">
-              <p className="text-xs font-semibold uppercase tracking-widest text-red-500/70 mb-2">External data said</p>
-              <p className="text-sm text-slate-300 leading-relaxed">
-                Tropical storm conditions. 12.5 days average vessel waiting
-                time. Limited sheltered berthing.
-              </p>
+        <section className="border-y border-[#d8d0c0] bg-[#fbfaf6]">
+          <div className="mx-auto max-w-6xl px-4 py-14 sm:px-6 md:py-18">
+            <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[#776f60]">
+              Signal types
+            </p>
+            <div className="mt-6 grid gap-4 md:grid-cols-2">
+              {signals.map((s) => (
+                <div key={s.label} className="border-t border-[#d8d0c0] pt-4">
+                  <h3 className="text-sm font-semibold">{s.label}</h3>
+                  <p className="mt-2 text-sm leading-6 text-[#5f5a4f]">{s.desc}</p>
+                </div>
+              ))}
             </div>
           </div>
+        </section>
 
-          <p className="mt-5 text-sm text-slate-400 leading-relaxed">
-            SupplyWatch flagged severity 5/5. A single-modal model looking
-            only at pixels would have called it normal. The system has
-            explicit rules for when external evidence overrides ambiguous
-            imagery.
-          </p>
+        <section className="mx-auto max-w-6xl px-4 py-14 sm:px-6 md:py-18">
+          <div className="grid gap-8 md:grid-cols-[0.8fr_1.2fr]">
+            <div>
+              <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[#776f60]">
+                Worked example
+              </p>
+              <h2 className="mt-3 text-2xl font-semibold tracking-tight md:text-3xl">
+                Static explanation, live dashboard.
+              </h2>
+            </div>
+            <div className="rounded-md border border-[#cfc6b4] bg-[#fbfaf6] p-5">
+              <p className="text-sm leading-6 text-[#5f5a4f]">
+                The Beira example is static copy from the current dataset, used
+                to explain why a multimodal system matters. The live route
+                remains the source of truth when future daily runs change the
+                briefing.
+              </p>
+              <div className="mt-5 grid gap-4 md:grid-cols-2">
+                <div>
+                  <p className="text-xs font-semibold uppercase tracking-[0.14em] text-[#8a8172]">
+                    Imagery alone
+                  </p>
+                  <p className="mt-2 text-sm leading-6 text-[#343126]">
+                    Vessels at berth, yard stacks visible, cranes operating.
+                    The port can look active.
+                  </p>
+                </div>
+                <div>
+                  <p className="text-xs font-semibold uppercase tracking-[0.14em] text-[#8a8172]">
+                    Combined assessment
+                  </p>
+                  <p className="mt-2 text-sm leading-6 text-[#343126]">
+                    Yard pressure near 85%, double-digit waiting times, and
+                    corridor risk make this a severe congestion briefing.
+                  </p>
+                </div>
+              </div>
+              <Link
+                href="/port/beira-mozambique"
+                className="mt-5 inline-flex text-sm font-semibold text-[#284f3b] hover:text-[#171713]"
+              >
+                Open Beira in the live dashboard
+              </Link>
+            </div>
+          </div>
+        </section>
+      </main>
 
-          <Link
-            href="/port/beira-mozambique"
-            className="inline-flex items-center gap-1.5 mt-5 text-sm text-blue-400 hover:text-blue-300 transition-colors"
-          >
-            View the full Beira briefing
-            <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-              <path strokeLinecap="round" strokeLinejoin="round" d="M13 7l5 5m0 0l-5 5m5-5H6" />
-            </svg>
-          </Link>
-        </div>
-      </section>
-
-      {/* Divider */}
-      <div className="max-w-4xl mx-auto px-4 sm:px-6">
-        <div className="h-px bg-gradient-to-r from-transparent via-slate-800 to-transparent" />
-      </div>
-
-      {/* Bottom CTA */}
-      <section className="px-4 sm:px-6 py-20 max-w-4xl mx-auto text-center">
-        <h2 className="text-2xl md:text-3xl font-bold text-slate-50 mb-3">
-          All 68 ports are live
-        </h2>
-        <p className="text-slate-400 mb-8 max-w-md mx-auto">
-          The dashboard updates daily. No login required to explore it.
-        </p>
-        <Link
-          href="/demo"
-          className="inline-flex items-center gap-2 rounded-lg bg-blue-600 px-4 sm:px-6 py-3 text-sm font-semibold text-white hover:bg-blue-500 transition-colors shadow-lg shadow-blue-500/20"
-        >
-          Open the dashboard
-          <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-            <path strokeLinecap="round" strokeLinejoin="round" d="M13 7l5 5m0 0l-5 5m5-5H6" />
-          </svg>
-        </Link>
-      </section>
-
-      {/* Footer */}
-      <footer className="px-4 sm:px-6 pb-12 max-w-4xl mx-auto border-t border-slate-800 pt-8">
-        <div className="flex flex-wrap gap-6 text-sm text-slate-500">
-          <Link href="/demo" className="hover:text-slate-300 transition-colors">
+      <footer className="border-t border-[#d8d0c0]">
+        <div className="mx-auto flex max-w-6xl flex-wrap gap-5 px-4 py-8 text-sm text-[#6d6558] sm:px-6">
+          <Link href="/demo" className="hover:text-[#171713]">
             Live dashboard
           </Link>
-          <Link href="/how-it-works" className="hover:text-slate-300 transition-colors">
+          <Link href="/how-it-works" className="hover:text-[#171713]">
             Engineering story
           </Link>
+          <a
+            href="https://github.com/tomoliveri/genai-supply-chain-vision"
+            className="hover:text-[#171713]"
+            target="_blank"
+            rel="noopener noreferrer"
+          >
+            GitHub
+          </a>
           <span>Built by Tom Oliveri, 2026</span>
-          <a href="https://github.com/tomoliveri/genai-supply-chain-vision" className="hover:text-slate-300 transition-colors" target="_blank" rel="noopener noreferrer">GitHub</a>
         </div>
       </footer>
     </div>

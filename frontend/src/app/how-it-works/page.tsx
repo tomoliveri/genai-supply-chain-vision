@@ -168,7 +168,7 @@ export default function HowItWorksPage() {
                 stage. Stage 2 (Assess): a separate call takes those
                 observations plus external context (weather from Open-Meteo,
                 labour events, geopolitical signals from a curated dataset of
-                18 active events) and produces a structured{' '}
+                19 active events) and produces a structured{' '}
                 <code className="text-xs bg-slate-800 px-1 py-0.5 rounded">
                   DisruptionAnalysis
                 </code>{' '}
@@ -243,6 +243,15 @@ export default function HowItWorksPage() {
             describe it back, it generates new code with different bugs.
           </p>
 
+          <p className="mt-3 text-sm text-slate-400 leading-relaxed">
+            In supply-chain and GIS domains, coordinate systems are basic
+            knowledge. The useful engineering observation was different:
+            agentic development makes these basic mistakes easier to generate
+            at speed unless the execution environment catches them immediately.
+            I treated CRS, axis order and metric-distance assumptions as code
+            contracts, not as facts to remember while prompting.
+          </p>
+
           <div className="mt-4 rounded-lg border border-amber-800/50 bg-amber-950/20 p-4">
             <h3 className="text-sm font-semibold text-amber-300 mb-2">
               The agentic execution loop
@@ -257,12 +266,34 @@ export default function HowItWorksPage() {
             </p>
             <p className="mt-2 text-sm text-slate-300 leading-relaxed">
               After several iterations the code stabilised. Each function
-              acquired inline assertions: for every computed bounding box, check
-              that the four corners form a valid WGS84 rectangle. For every
-              tile index, check it matches a manual computation for a known
-              reference point. For every distance calculation, validate against
-              the Haversine formula. The assertions became the guardrail. They
-              remain in the committed code and run as part of the test suite.
+              acquired an explicit contract: inputs are latitude/longitude in
+              WGS84, internal distance work happens in the local UTM zone, and
+              outputs are GeoJSON-order bounding boxes{' '}
+              <code className="text-xs bg-slate-800 px-1 py-0.5 rounded">
+                [min_lon, min_lat, max_lon, max_lat]
+              </code>
+              . The implementation uses{' '}
+              <code className="text-xs bg-slate-800 px-1 py-0.5 rounded">
+                always_xy=True
+              </code>{' '}
+              on every pyproj transformer so EPSG axis-order changes cannot
+              silently swap latitude and longitude.
+            </p>
+          </div>
+
+          <div className="mt-4 rounded-lg border border-slate-800 bg-slate-900/50 p-4">
+            <h3 className="text-sm font-semibold text-slate-200 mb-2">
+              How it was made durable
+            </h3>
+            <p className="text-sm text-slate-400 leading-relaxed">
+              The committed test suite covers Ningbo, Suez, Singapore
+              (equatorial), Tromso at 70 degrees north, and Auckland near
+              175 degrees east. For each point it asserts WGS84 output ranges,
+              non-reversed latitude/longitude bounds, centre proximity within
+              10 metres of the input coordinate, 2 km width and height within
+              5%, and valid world-bound corners. Those tests are intentionally
+              boring. That is the point: they turn a class of subtle map bugs
+              into immediate failures during agentic iteration.
             </p>
           </div>
 
@@ -306,15 +337,35 @@ export default function HowItWorksPage() {
               Worked example: Beira, Mozambique
             </h3>
             <p className="text-sm text-slate-300 leading-relaxed">
-              The Sentinel-2 image of Beira from March 2026 showed vessels at
-              berth, yard stacks at expected levels and operating cranes. On
-              imagery alone, severity 1 or 2 would have been reasonable.
-              External weather data from Open-Meteo showed tropical storm
-              conditions in the Mozambique Channel, with the port (limited
-              sheltered berthing) reporting 12.5 days average vessel waiting
-              time. The assessment prompt tells Gemini that severe weather with
-              documented congestion at the specific port overrides ambiguous
-              imagery. The result was severity 5/5 with high confidence.
+              The Sentinel-2 image of Beira from May 2026 showed heavy vessel
+              activity, yard utilization around 85% and all observed vessels
+              already at berth. On imagery alone, that can look like throughput.
+              External context changes the interpretation: Beira is in a
+              severe, multi-week congestion hotspot with double-digit waiting
+              times, equipment constraints and corridor security risk on the
+              EN6 route inland. The current weather signal is mild, so the
+              assessment classifies the disruption as systemic congestion, not
+              active severe weather. The result is severity 5/5 with high
+              confidence.
+            </p>
+            <p className="mt-2 text-sm text-slate-300 leading-relaxed">
+              The prediction value is the important part. A customer does not
+              need the system to say that Beira looked busy after a shipment is
+              already late; they need a daily signal that the port is likely to
+              create delay risk before their own container misses an ETA. Here,
+              the active congestion window, high yard pressure, full berth line
+              and corridor-security context produced a severe disruption
+              briefing even though the pixels alone did not show an obvious
+              shutdown. That is the intended product behaviour: predict
+              operational delay risk from converging weak signals, then make
+              the evidence auditable.
+            </p>
+            <p className="mt-2 text-sm text-slate-500 leading-relaxed">
+              This is still a worked example, not a validated forecasting
+              benchmark. The next engineering step would be to backtest daily
+              briefings against independent port-waiting-time and shipment ETA
+              data, then report precision, recall and lead time by disruption
+              category.
             </p>
             <p className="mt-2 text-sm text-slate-300 leading-relaxed">
               The inverse also works: a port in a region with active

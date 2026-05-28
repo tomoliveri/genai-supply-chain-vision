@@ -105,6 +105,59 @@ function mergeLocations(
   return merged;
 }
 
+function briefingFingerprint(briefing: DailyBriefing | null): string {
+  if (!briefing) return '';
+  return [
+    briefing.id,
+    briefing.analysed_at,
+    briefing.disruption_detected ? '1' : '0',
+    briefing.severity_score,
+    briefing.confidence_grade,
+    briefing.disruption_category ?? '',
+    briefing.explanation,
+    briefing.container_yard_fill_pct ?? '',
+    briefing.vessel_count ?? '',
+    briefing.vessel_count_anchorage ?? '',
+    briefing.weather_summary ?? '',
+    briefing.labor_status ?? '',
+    briefing.peak_season_flag ? '1' : '0',
+    briefing.geopolitical_category ?? '',
+    briefing.geopolitical_max_severity ?? '',
+    briefing.geopolitical_active_events?.join('|') ?? '',
+  ].join('\u001f');
+}
+
+function locationsEquivalent(
+  prev: LocationWithBriefing[],
+  next: LocationWithBriefing[],
+): boolean {
+  if (prev.length !== next.length) return false;
+
+  for (let i = 0; i < prev.length; i += 1) {
+    const a = prev[i];
+    const b = next[i];
+    if (
+      a.id !== b.id ||
+      a.location_name !== b.location_name ||
+      a.latitude !== b.latitude ||
+      a.longitude !== b.longitude ||
+      a.severityScore !== b.severityScore ||
+      briefingFingerprint(a.latestBriefing) !== briefingFingerprint(b.latestBriefing) ||
+      a.history.length !== b.history.length
+    ) {
+      return false;
+    }
+
+    for (let j = 0; j < a.history.length; j += 1) {
+      if (briefingFingerprint(a.history[j]) !== briefingFingerprint(b.history[j])) {
+        return false;
+      }
+    }
+  }
+
+  return true;
+}
+
 function computeStats(locations: LocationWithBriefing[]): DisruptionStats {
   const totalPorts = locations.length;
   const disruptedPorts = locations.filter(
@@ -156,7 +209,10 @@ export function useFirestoreData(): UseFirestoreDataResult {
 
     function handleUpdate(): void {
       if (watchlistReadyRef.current && briefingsReadyRef.current) {
-        setLocations(mergeLocations(watchlistRef.current, briefingsRef.current));
+        const nextLocations = mergeLocations(watchlistRef.current, briefingsRef.current);
+        setLocations((prev) => (
+          locationsEquivalent(prev, nextLocations) ? prev : nextLocations
+        ));
         setLoading(false);
       }
     }

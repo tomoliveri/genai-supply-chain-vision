@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useRef } from 'react';
+import { useCallback, useState } from 'react';
 import { useFirestoreData } from '@/hooks/useFirestoreData';
 import { Sidebar } from '@/components/Sidebar';
 import { MapPane } from '@/components/MapPane';
@@ -16,22 +16,17 @@ interface DashboardContentProps {
 type MobileView = 'list' | 'map';
 
 export function DashboardContent({ portSlug }: DashboardContentProps) {
-  const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [selectedId, setSelectedId] = useState<string | null | undefined>(undefined);
   const [searchQuery, setSearchQuery] = useState('');
   const [mobileView, setMobileView] = useState<MobileView>('list');
   const { locations, stats, loading, error } = useFirestoreData();
-  const autoSelectedRef = useRef(false);
+  const handleSelect = useCallback((id: string) => setSelectedId(id), []);
+  const handleCloseBriefing = useCallback(() => setSelectedId(null), []);
 
-  useEffect(() => {
-    if (!portSlug || autoSelectedRef.current || loading || locations.length === 0) return;
-    const match = locations.find(
-      (loc) => slugifyLocationName(loc.location_name) === portSlug
-    );
-    if (match) {
-      setSelectedId(match.id);
-      autoSelectedRef.current = true;
-    }
-  }, [portSlug, locations, loading]);
+  const portMatchedId = portSlug
+    ? locations.find((loc) => slugifyLocationName(loc.location_name) === portSlug)?.id
+    : null;
+  const activeSelectedId = selectedId === undefined ? portMatchedId ?? null : selectedId;
 
   const filteredLocations = searchQuery.trim()
     ? locations.filter((loc) =>
@@ -39,7 +34,7 @@ export function DashboardContent({ portSlug }: DashboardContentProps) {
       )
     : locations;
 
-  const selectedLocation = locations.find((loc) => loc.id === selectedId) ?? null;
+  const selectedLocation = locations.find((loc) => loc.id === activeSelectedId) ?? null;
 
   return (
     // `relative` here is the containing block for the mobile absolute overlay below.
@@ -55,8 +50,8 @@ export function DashboardContent({ portSlug }: DashboardContentProps) {
         }`}>
           <Sidebar
             locations={filteredLocations}
-            selectedId={selectedId}
-            onSelect={setSelectedId}
+            selectedId={activeSelectedId}
+            onSelect={handleSelect}
             searchQuery={searchQuery}
             onSearchChange={setSearchQuery}
             stats={stats}
@@ -89,8 +84,8 @@ export function DashboardContent({ portSlug }: DashboardContentProps) {
           <div className="flex-1 relative">
             <MapPane
               locations={filteredLocations}
-              selectedId={selectedId}
-              onSelect={setSelectedId}
+              selectedId={activeSelectedId}
+              onSelect={handleSelect}
             />
           </div>
         </main>
@@ -100,7 +95,7 @@ export function DashboardContent({ portSlug }: DashboardContentProps) {
           <div className="hidden md:block w-[420px] shrink-0 h-full">
             <BriefingDrawer
               location={selectedLocation}
-              onClose={() => setSelectedId(null)}
+              onClose={handleCloseBriefing}
             />
           </div>
         )}
@@ -140,7 +135,7 @@ export function DashboardContent({ portSlug }: DashboardContentProps) {
         <div className="md:hidden absolute inset-0 z-50">
           <BriefingDrawer
             location={selectedLocation}
-            onClose={() => setSelectedId(null)}
+            onClose={handleCloseBriefing}
           />
         </div>
       )}

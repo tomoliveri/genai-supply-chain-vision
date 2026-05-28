@@ -450,8 +450,14 @@ export default function HowItWorksPage() {
             this documentation.
           </p>
           <p className="mt-2 text-sm text-slate-500">
-            GitHub repository: link coming soon. Contact Tom Oliveri for
-            access in the meantime.
+            <a
+              href="https://github.com/tomoliveri/genai-supply-chain-vision"
+              className="text-blue-500 hover:text-blue-400 transition-colors"
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              github.com/tomoliveri/genai-supply-chain-vision
+            </a>
           </p>
         </section>
       </div>

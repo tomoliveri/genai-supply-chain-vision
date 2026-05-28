@@ -285,7 +285,7 @@ export default function LandingPage() {
             Engineering story
           </Link>
           <span>Built by Tom Oliveri, 2026</span>
-          <span>Open source (repo link coming soon)</span>
+          <a href="https://github.com/tomoliveri/genai-supply-chain-vision" className="hover:text-slate-300 transition-colors" target="_blank" rel="noopener noreferrer">GitHub</a>
         </div>
       </footer>
     </div>

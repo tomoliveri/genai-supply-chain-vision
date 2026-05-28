@@ -184,6 +184,7 @@ function SeverityTimeline({ history }: { history: DailyBriefing[] }) {
 export function BriefingDrawer({ location, onClose }: BriefingDrawerProps) {
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [showAllHistory, setShowAllHistory] = useState(false);
+  const [typeGuideOpen, setTypeGuideOpen] = useState(false);
   const briefing = location.history.find((h) => h.id === selectedId) ?? location.latestBriefing;
   const severityColor = SEVERITY_COLORS[location.severityScore] ?? '#64748b';
   const severityLabel = SEVERITY_LABELS[location.severityScore] ?? 'Unknown';
@@ -265,25 +266,33 @@ export function BriefingDrawer({ location, onClose }: BriefingDrawerProps) {
 
             {/* Disruption type guide */}
             <div>
-              <p className="text-xs font-medium text-slate-400 uppercase tracking-wider mb-2 flex items-center gap-1.5">
-                <Info className="w-3.5 h-3.5" />
-                Type Guide
-              </p>
-              <div className="grid gap-2">
-                {Object.entries(CATEGORY_META)
-                  .filter(([key]) => key !== 'none')
-                  .map(([key, meta]) => (
-                    <div key={key} className="rounded-md border border-slate-800 bg-slate-950/60 p-2.5">
-                      <div className="flex items-center gap-2">
-                        <span className={`h-2 w-2 rounded-full ${categoryColorClass(key)}`} />
-                        <span className="text-xs font-semibold text-slate-200">{meta.label}</span>
+              <button
+                onClick={() => setTypeGuideOpen(o => !o)}
+                className="flex w-full items-center justify-between text-xs font-medium text-slate-400 uppercase tracking-wider"
+              >
+                <span className="flex items-center gap-1.5">
+                  <Info className="w-3.5 h-3.5" />
+                  Type Guide
+                </span>
+                {typeGuideOpen ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />}
+              </button>
+              {typeGuideOpen && (
+                <div className="grid gap-2 mt-2">
+                  {Object.entries(CATEGORY_META)
+                    .filter(([key]) => key !== 'none')
+                    .map(([key, meta]) => (
+                      <div key={key} className="rounded-md border border-slate-800 bg-slate-950/60 p-2.5">
+                        <div className="flex items-center gap-2">
+                          <span className={`h-2 w-2 rounded-full ${categoryColorClass(key)}`} />
+                          <span className="text-xs font-semibold text-slate-200">{meta.label}</span>
+                        </div>
+                        <p className="mt-1 text-xs leading-relaxed text-slate-500">
+                          {meta.description}
+                        </p>
                       </div>
-                      <p className="mt-1 text-xs leading-relaxed text-slate-500">
-                        {meta.description}
-                      </p>
-                    </div>
-                  ))}
-              </div>
+                    ))}
+                </div>
+              )}
             </div>
 
             {/* Disruption status */}
